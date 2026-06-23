@@ -130,78 +130,36 @@
     }
 
     /* Main Content Wrapper */
-    /* Main Content Wrapper & Grid Layout */
+    /* Main Content Wrapper (Centered Single Column Layout) */
     .content-container {
-      max-width: 1200px;
+      max-width: 850px;
       margin: 0 auto;
-      padding: 0 40px;
-      transition: max-width 0.3s ease;
+      padding: 0 20px;
+      position: relative;
+      z-index: 2;
     }
 
-    @media (min-width: 1024px) {
-      .content-container {
-        display: grid;
-        grid-template-columns: 1.25fr 0.75fr;
-        gap: 50px;
-        align-items: start;
-        max-width: 1300px;
-      }
-      
-      .main-content-flow {
-        grid-column: 1;
-        min-width: 0;
-      }
-      
-      .sticky-3d-sidebar {
-        grid-column: 2;
-        position: sticky;
-        top: 100px;
-        height: calc(100vh - 140px);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10;
-        pointer-events: none;
-      }
-
-      .sticky-3d-sidebar .scroller-container {
-        pointer-events: auto;
-      }
-
-      .hero-image-mobile-only {
-        display: none;
-      }
-    }
-
-    @media (max-width: 1023px) {
-      .content-container {
-        display: flex;
-        flex-direction: column;
-      }
-      
-      .sticky-3d-sidebar {
-        display: none;
-      }
-      
-      .hero-image-mobile-only {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 30px;
-        width: 100%;
-      }
-    }
-
-
-    /* Section Styling & Parallax Effects */
+    /* Section Styling with Light Glassmorphism */
     section {
-      padding: 100px 40px;
-      border-bottom: 1px solid var(--border-light);
+      padding: 80px 40px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       scroll-margin-top: 80px;
-      border-radius: 16px;
-      margin: 20px 0;
-      box-shadow: var(--shadow-soft);
+      border-radius: 24px;
+      margin: 40px 0;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.04);
+      transition: box-shadow 0.3s ease, border-color 0.3s ease;
     }
+
+    @media (max-width: 768px) {
+      section {
+        padding: 45px 20px;
+        margin: 25px 0;
+      }
+    }
+
 
     #cover {
       background-image: linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)), url('../picture_ghn/photo_2025-10-13_11-11-29.jpg');
@@ -264,28 +222,32 @@
     }
 
 
-    /* 3D Scroll-driven Animation Container */
-    .scroller-container {
-      width: 100%;
-      max-width: 420px;
-      height: 420px;
+    /* Cinematic Fixed 3D Background */
+    .fixed-3d-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
       display: flex;
       justify-content: center;
       align-items: center;
-      background: radial-gradient(circle, rgba(242, 101, 34, 0.12) 0%, transparent 70%);
-      border-radius: 50%;
-      position: relative;
+      opacity: 0.3; /* Opacity 30% as requested by user */
+      pointer-events: none;
+      background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(242, 101, 34, 0.04) 100%);
+      transition: opacity 0.5s ease;
     }
 
-    .scroller-container img {
+    .fixed-3d-bg img {
       width: 100%;
       height: 100%;
+      max-width: 900px;
       object-fit: contain;
       filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.15));
-      border-radius: 20px;
-      transition: transform 0.1s ease-out;
-      animation: float-3d 6s ease-in-out infinite;
+      animation: float-3d 8s ease-in-out infinite;
     }
+
 
 
     @keyframes float-3d {
@@ -1404,32 +1366,32 @@
     </div>
   </nav>
  
+  <!-- Cinematic Fixed 3D Background -->
+  <div class="fixed-3d-bg">
+    <img id="3d-frame" src="../picture_ghn/Video/Delivery_riders_form_Vietnam_map_202606231811_000.jpg" alt="GHN 3D Courier">
+  </div>
+
   <!-- Content Wrapper -->
   <div class="content-container">
     
-    <!-- Cột bên trái: Dòng chảy nội dung chính -->
-    <div class="main-content-flow">
-      
-      <!-- Section 1: Hero Cover Section -->
-      <section class="hero-section" id="cover">
-        <div class="hero-text-content">
-          <h1 class="hero-title">F2 V2</h1>
-          <div class="hero-subtitle-box">
-            <h2 class="hero-subtitle">Quy chuẩn diện mạo và giải trình bưu cục</h2>
-            <p class="hero-desc">Tài liệu hướng dẫn tinh gọn dành riêng cho cấp Vùng</p>
-            
-            <!-- Quick Actions Links Bar -->
-            <div class="quick-actions-bar">
-              <a href="https://docs.google.com/spreadsheets/d/17ntSJzL8IS180hiJ0jBLWctnKF6iZVZ64sOE5JB1mwg/edit?gid=113329765#gid=113329765" target="_blank" rel="noopener noreferrer" class="action-btn">Bảng Giải Trình ↗</a>
-              <a href="https://docs.google.com/presentation/d/1upXP0UAr9j0bOC_rY-yrD2GTZg5_wgi24UvKJBYBp8I/edit?slide=id.g3dd4af246cc_3_39#slide=id.g3dd4af246cc_3_39" target="_blank" rel="noopener noreferrer" class="action-btn">Tài Liệu Slides ↗</a>
-              <a href="https://drive.google.com/file/d/1xR8HkbvY_L69j73OT8piFa0LUhIcHBMz/view" target="_blank" rel="noopener noreferrer" class="action-btn">Chính Sách PDF ↗</a>
-            </div>
+    <!-- Section 1: Hero Cover Section -->
+    <section class="hero-section" id="cover">
+      <div class="hero-text-content">
+        <h1 class="hero-title">F2 V2</h1>
+        <div class="hero-subtitle-box">
+          <h2 class="hero-subtitle">Quy chuẩn diện mạo và giải trình bưu cục</h2>
+          <p class="hero-desc">Tài liệu hướng dẫn tinh gọn dành riêng cho cấp Vùng</p>
+          
+          <!-- Quick Actions Links Bar -->
+          <div class="quick-actions-bar">
+            <a href="https://docs.google.com/spreadsheets/d/17ntSJzL8IS180hiJ0jBLWctnKF6iZVZ64sOE5JB1mwg/edit?gid=113329765#gid=113329765" target="_blank" rel="noopener noreferrer" class="action-btn">Bảng Giải Trình ↗</a>
+            <a href="https://docs.google.com/presentation/d/1upXP0UAr9j0bOC_rY-yrD2GTZg5_wgi24UvKJBYBp8I/edit?slide=id.g3dd4af246cc_3_39#slide=id.g3dd4af246cc_3_39" target="_blank" rel="noopener noreferrer" class="action-btn">Tài Liệu Slides ↗</a>
+            <a href="https://drive.google.com/file/d/1xR8HkbvY_L69j73OT8piFa0LUhIcHBMz/view" target="_blank" rel="noopener noreferrer" class="action-btn">Chính Sách PDF ↗</a>
           </div>
         </div>
-        
-        <!-- Nơi chứa mô hình 3D trên Mobile -->
-        <div class="hero-image-mobile-only"></div>
-      </section>
+      </div>
+    </section>
+
 
  
     <!-- Section 2: What's New -->
@@ -1640,15 +1602,6 @@
         </div>
       </div>
     </section>
-    </div> <!-- Hết main-content-flow -->
-
-    <!-- Cột bên phải: Sticky 3D Sidebar (chứa scroller-container mặc định trên Desktop) -->
-    <div class="sticky-3d-sidebar">
-      <div class="scroller-container">
-        <img id="3d-frame" src="../picture_ghn/Video/Delivery_riders_form_Vietnam_map_202606231811_000.jpg" alt="GHN 3D Courier" class="floating-img">
-      </div>
-    </div>
-
   </div> <!-- Hết content-container -->
 
   <!-- Lightbox Modal -->
@@ -2033,32 +1986,7 @@
       frameElement.src = baseFrameUrl + frameNum + '.jpg';
     });
 
-    // Responsive DOM placement for 3D scroller container
-    function handleResponsive3DScroller() {
-      const scroller = document.querySelector('.scroller-container');
-      const desktopTarget = document.querySelector('.sticky-3d-sidebar');
-      const mobileTarget = document.querySelector('.hero-image-mobile-only');
-      
-      if (!scroller) return;
-      
-      if (window.innerWidth < 1024) {
-        if (mobileTarget && !mobileTarget.contains(scroller)) {
-          mobileTarget.appendChild(scroller);
-        }
-      } else {
-        if (desktopTarget && !desktopTarget.contains(scroller)) {
-          desktopTarget.appendChild(scroller);
-        }
-      }
-    }
 
-    window.addEventListener('resize', handleResponsive3DScroller);
-    
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', handleResponsive3DScroller);
-    } else {
-      handleResponsive3DScroller();
-    }
 
 
   </script>
