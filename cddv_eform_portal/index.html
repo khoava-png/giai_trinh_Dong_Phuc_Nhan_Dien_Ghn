@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CDDV EForm Portal — Chấm Điểm Dịch Vụ GHN | v6.0</title>
+    <meta name="description" content="Cổng chấm điểm dịch vụ GHN qua EForm nội bộ. Bài chấm Hàng Tuần, Cấp Quản Lý, khắc phục phiếu lỗi, hướng dẫn Timemark. Delivery Edition.">
+    <script src="https://unpkg.com/phosphor-icons"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+    <!-- ══════ FLOATING NAV ══════ -->
+    <nav class="nav-float" id="navFloat">
+        <div class="nav-inner">
+            <a href="#hero" class="nav-brand">
+                <span class="nav-brand-text">CDDV<span class="nav-brand-dot">.</span>Portal</span>
+            </a>
+            <div class="nav-links">
+                <a href="#bai-cham" class="nav-link">Bài Chấm</a>
+                <a href="#khac-phuc" class="nav-link">Khắc Phục</a>
+                <a href="#timemark" class="nav-link">Timemark</a>
+                <a href="#eform-flow" class="nav-link">EForm</a>
+            </div>
+            <a href="https://noibo.ghn.vn/eform/form/create?flowId=6a058c7b0f879cdfe070e687" target="_blank" class="nav-cta">
+                Chấm Ngay <span class="nav-cta-arrow"><i class="ph ph-arrow-right"></i></span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- ══════ HERO ══════ -->
+    <section class="hero" id="hero">
+        <div class="hero-content">
+            <div class="hero-eyebrow" data-reveal>
+                Giao Hàng Nhanh — Chấm Điểm Dịch Vụ
+            </div>
+            <h1 class="hero-title" data-reveal>
+                Quy Chuẩn Chấm Điểm & Khắc Phục Phiếu Lỗi EForm<span class="hero-dot">.</span>
+            </h1>
+            <p class="hero-sub" data-reveal>
+                Cổng hướng dẫn chi tiết về Quy chuẩn Chấm điểm dịch vụ định kỳ và Quy trình khắc phục phiếu lỗi qua hệ thống EForm nội bộ của Giao Hàng Nhanh.
+            </p>
+            <div class="hero-actions" data-reveal>
+                <a href="https://noibo.ghn.vn/eform/form/create?flowId=6a058c7b0f879cdfe070e687" class="btn-primary eform-btn">
+                    Vào EForm Chấm Ngay
+                    <span class="btn-primary-arrow"><i class="ph ph-arrow-right"></i></span>
+                </a>
+                <a href="#bai-cham" class="btn-ghost">
+                    <i class="ph ph-info"></i> Xem Hướng Dẫn
+                </a>
+            </div>
+
+            <!-- Stats row -->
+            <div class="hero-stats" data-reveal>
+                <div class="hero-stat">
+                    <span class="hero-stat-num">2</span>
+                    <span class="hero-stat-label">Loại Bài Chấm</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-num">12</span>
+                    <span class="hero-stat-label">Tiêu Chí</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat-num">48H</span>
+                    <span class="hero-stat-label">Hạn Khắc Phục</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════ SECTION: 2 BÀI CHẤM ══════ -->
+    <section class="section section--bg" id="bai-cham">
+        <div class="section-container">
+            <div class="section-head" data-reveal>
+                <span class="section-eyebrow">Bài Chấm Điểm</span>
+                <h2 class="section-title">Hai Loại Bài Chấm Quy Chuẩn<span class="dot">.</span></h2>
+                <p class="section-sub">Bưu cục <strong>tự tạo phiếu</strong> khi đến lịch chấm trên hệ thống EForm. Mỗi loại bài áp dụng cho chức danh khác nhau.</p>
+            </div>
+
+            <div class="bento-grid">
+                <!-- HÀNG TUẦN -->
+                <div class="bento-card bento-card--large" data-reveal>
+                    <div class="bento-tag bento-tag--green">Định Kỳ</div>
+                    <div class="bento-icon-box">
+                        <i class="ph ph-calendar-check"></i>
+                    </div>
+                    <h3 class="bento-title">[HÀNG TUẦN]</h3>
+                    <div class="bento-meta">
+                        <div class="bento-meta-row">
+                            <i class="ph ph-users-three"></i>
+                            <span><strong>Chức danh:</strong> NVXL · AM · AAM</span>
+                        </div>
+                        <div class="bento-meta-row">
+                            <i class="ph ph-clock"></i>
+                            <span><strong>Tần suất:</strong> 1 lần / tuần (Thứ 2 → Thứ 7)</span>
+                        </div>
+                        <div class="bento-meta-row">
+                            <i class="ph ph-note-pencil"></i>
+                            <span><strong>Cách tạo:</strong> Chọn quy trình <code>[HÀNG TUẦN] - BẢNG ĐÁNH GIÁ BC GHN</code></span>
+                        </div>
+                    </div>
+                    <a href="https://noibo.ghn.vn/eform/form/create?flowId=6a058c7b0f879cdfe070e687" class="bento-cta eform-btn">
+                        Tạo Phiếu Hàng Tuần <span class="bento-cta-arrow"><i class="ph ph-arrow-right"></i></span>
+                    </a>
+                    
+                    <!-- Accordion Hướng Dẫn Chấm Chi Tiết -->
+                    <details class="bento-details">
+                        <summary><i class="ph ph-list-numbers"></i> Xem 10 Tiêu Chí Chấm Chi Tiết</summary>
+                        <div class="details-content">
+                            <ol>
+                                <li><strong>Khu vực mặt tiền bưu cục:</strong> Biển hiệu rõ ràng, khu vực đậu xe gọn gàng, sạch sẽ, không rác thải.</li>
+                                <li><strong>Bảng đăng ký kinh doanh:</strong> Treo ngay ngắn trước cửa bưu cục, chụp rõ đầy đủ thông tin.</li>
+                                <li><strong>Cơ sở vật chất:</strong> Chụp 2 ảnh (từ ngoài vào trong và từ trong ra ngoài) thấy rõ bàn ghế, kệ, lối đi thông thoáng.</li>
+                                <li><strong>Khu vực chia tuyến NVPTTT:</strong> Sọt hàng có bảng tên + tuyến đúng định dạng: <code>Tên tuyến (Địa bàn) + IDNV</code>.</li>
+                                <li><strong>Nhà vệ sinh:</strong> Sạch sẽ, thông thoáng, không rác thải.</li>
+                                <li><strong>Thiết bị PCCC:</strong> Đủ số lượng 1 bộ tiêu lệnh + 2 bình chữa cháy đặt gọn gàng, ngăn nắp.</li>
+                                <li><strong>CCDC, VPP:</strong> Sắp xếp ngăn nắp, cân, máy in, súng barcode sạch sẽ, không vứt lung tung.</li>
+                                <li><strong>Bảng thông báo:</strong> Treo ngay ngắn cách sàn 1m8, đủ 7 file chính sách và hotline khẩn cấp.</li>
+                                <li><strong>Thông báo lắp camera:</strong> In khổ giấy A4 rõ mực dán lên bảng thông báo.</li>
+                                <li><strong>Đồng phục nhân viên:</strong> Nhân viên mặc đúng đồng phục, mang giày (không mang dép lê).</li>
+                            </ol>
+                        </div>
+                    </details>
+
+                    <div class="eform-preview-card">
+                        <img src="images/content/eform_hang_tuan.png" alt="Giao diện EForm Chấm điểm hàng tuần" loading="lazy">
+                    </div>
+                </div>
+
+                <!-- CẤP QUẢN LÝ -->
+                <div class="bento-card" data-reveal>
+                    <div class="bento-tag bento-tag--amber">Theo Target</div>
+                    <div class="bento-icon-box bento-icon-box--amber">
+                        <i class="ph ph-stack"></i>
+                    </div>
+                    <h3 class="bento-title">[CẤP QUẢN LÝ]</h3>
+                    <div class="bento-meta">
+                        <div class="bento-meta-row">
+                            <i class="ph ph-users-three"></i>
+                            <span><strong>Chức danh:</strong> AM · AAM · GDV · PGDV</span>
+                        </div>
+                        <div class="bento-meta-row">
+                            <i class="ph ph-target"></i>
+                            <span><strong>Tần suất:</strong> Đột xuất hoặc theo target</span>
+                        </div>
+                        <div class="bento-meta-row">
+                            <i class="ph ph-note-pencil"></i>
+                            <span><strong>Cách tạo:</strong> Chọn quy trình <code>[CẤP QUẢN LÝ] - BẢNG ĐÁNH GIÁ BC GHN</code></span>
+                        </div>
+                    </div>
+                    <a href="https://noibo.ghn.vn/eform/form/create?flowId=6a058c7b0f879cdfe070e687" class="bento-cta eform-btn">
+                        Tạo Phiếu Cấp QL <span class="bento-cta-arrow"><i class="ph ph-arrow-right"></i></span>
+                    </a>
+
+                    <!-- Accordion Hướng Dẫn Chấm Chi Tiết -->
+                    <details class="bento-details">
+                        <summary><i class="ph ph-list-numbers"></i> Xem Tiêu Chí Chấm Chi Tiết</summary>
+                        <div class="details-content">
+                            <ol>
+                                <li><strong>Mặt tiền, ĐKKD & Bảng thông báo:</strong> Đảm bảo đầy đủ biển hiệu, thông tin treo ngay ngắn.</li>
+                                <li><strong>Khu chứa CCDC & VPP:</strong> Chỉ đặt đủ dùng tại bưu cục, gọn gàng, không tồn quá nhiều.</li>
+                                <li><strong>Công cụ dụng cụ:</strong> Kiểm tra máy in, súng barcode, rổ sóng, cân điện tử, khung bao tải...</li>
+                                <li><strong>Bảng phân tuyến:</strong> Cập nhật chi tiết năng suất nhân viên hàng ngày.</li>
+                                <li><strong>Tủ hệ thống camera & Net:</strong> Tủ khóa kín, không ghim chìa khóa, hệ thống hoạt động 24/24.</li>
+                                <li><strong>Vệ sinh trần nhà:</strong> Không bụi bẩn, váng nhện. Chụp 2 ảnh góc 45 độ từ cửa và cuối BC.</li>
+                                <li><strong>Khu vực bình chữa cháy:</strong> Có đủ thiết bị PCCC, bộ tiêu lệnh và nội quy PCCC.</li>
+                                <li><strong>Tác phong cấp quản lý:</strong> Mặc đúng đồng phục, mang giày theo quy định.</li>
+                            </ol>
+                        </div>
+                    </details>
+
+                    <div class="eform-preview-card">
+                        <img src="images/content/eform_quan_ly.png" alt="Giao diện EForm Chấm điểm cấp quản lý" loading="lazy">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Hướng Dẫn Chấm Bài -->
+            <div class="video-block" data-reveal>
+                <h4 class="video-title">
+                    <i class="ph ph-video-camera"></i>
+                    Video Hướng Dẫn Thao Tác Chấm Bài Hàng Tuần
+                </h4>
+                <div class="video-wrapper">
+                    <video controls preload="metadata">
+                        <source src="assets/video/Cham_Diem_Hang_Tuan.mp4" type="video/mp4">
+                        Trình duyệt của bạn không hỗ trợ phát video.
+                    </video>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════ SECTION: KHẮC PHỤC PHIẾU LỖI ══════ -->
+    <section class="section section--bg" id="khac-phuc">
+        <div class="section-container">
+            <div class="section-head" data-reveal>
+                <span class="section-eyebrow">Khắc Phục Phiếu Lỗi</span>
+                <h2 class="section-title">Hai Loại Phiếu Lỗi & Quy Trình Xử Lý<span class="dot">.</span></h2>
+                <p class="section-sub">Khi phát sinh phiếu lỗi, bưu cục có đúng <strong>48 giờ</strong> để tiến hành khắc phục thực tế và phản hồi trên EForm.</p>
+            </div>
+
+            <div class="fix-grid">
+                <!-- [PL HÀNG TUẦN] -->
+                <div class="fix-card" data-reveal>
+                    <div class="fix-card-header">
+                        <div class="fix-card-icon fix-card-icon--amber">
+                            <i class="ph ph-calendar-x"></i>
+                        </div>
+                        <div>
+                            <div class="fix-card-badge fix-card-badge--amber">Loại 1</div>
+                            <h3 class="fix-card-title">[PL HÀNG TUẦN]</h3>
+                        </div>
+                    </div>
+                    <p class="fix-card-desc">Phát sinh tự động khi bưu cục tự thực hiện bài chấm <strong>Hàng Tuần</strong> nhưng có tiêu chí bị chấm <strong>Không đạt</strong>. Cần khắc phục lỗi thực tế và gửi ảnh minh chứng.</p>
+                    <div class="fix-steps">
+                        <div class="fix-step"><span class="fix-step-num">1</span><span>Nhận phiếu lỗi tự động</span></div>
+                        <div class="fix-step"><span class="fix-step-num">2</span><span>Xác định tiêu chí không đạt</span></div>
+                        <div class="fix-step"><span class="fix-step-num">3</span><span>Khắc phục lỗi tại bưu cục</span></div>
+                        <div class="fix-step"><span class="fix-step-num">4</span><span>Chụp ảnh qua Timemark/Timestamp</span></div>
+                        <div class="fix-step"><span class="fix-step-num">5</span><span>Chọn quy trình <code>[PL HÀNG TUẦN]</code></span></div>
+                        <div class="fix-step"><span class="fix-step-num">6</span><span>Tải ảnh + Giải trình & Gửi</span></div>
+                    </div>
+                    <div class="eform-preview-card">
+                        <img src="images/content/pl_hang_tuan.png" alt="Giao diện EForm Khắc phục phiếu lỗi hàng tuần" loading="lazy">
+                    </div>
+                </div>
+
+                <!-- [PL CAMERA] -->
+                <div class="fix-card" data-reveal>
+                    <div class="fix-card-header">
+                        <div class="fix-card-icon fix-card-icon--red">
+                            <i class="ph ph-camera-slash"></i>
+                        </div>
+                        <div>
+                            <div class="fix-card-badge fix-card-badge--red">Loại 2</div>
+                            <h3 class="fix-card-title">[PL CAMERA]</h3>
+                        </div>
+                    </div>
+                    <p class="fix-card-desc">Phát sinh khi đội ngũ <strong>Camera giám sát</strong> quét bưu cục và ghi nhận lỗi vi phạm hình ảnh/vận hành. Cần tiến hành dọn dẹp, sắp xếp lại và phản hồi hình ảnh mới.</p>
+                    <div class="fix-steps">
+                        <div class="fix-step"><span class="fix-step-num">1</span><span>Nhận thông báo có phiếu camera</span></div>
+                        <div class="fix-step"><span class="fix-step-num">2</span><span>Xem mô tả lỗi chi tiết</span></div>
+                        <div class="fix-step"><span class="fix-step-num">3</span><span>Xử lý vệ sinh/đồng phục/CCDC</span></div>
+                        <div class="fix-step"><span class="fix-step-num">4</span><span>Chụp ảnh có GPS & thời gian</span></div>
+                        <div class="fix-step"><span class="fix-step-num">5</span><span>Chọn quy trình <code>[PL CAMERA]</code></span></div>
+                        <div class="fix-step"><span class="fix-step-num">6</span><span>Đính kèm ảnh + Ghi chú & Gửi</span></div>
+                    </div>
+                    <div class="eform-preview-card">
+                        <img src="images/content/pl_camera.png" alt="Giao diện EForm Khắc phục phiếu lỗi camera" loading="lazy">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Hướng Dẫn Khắc Phục Phiếu Lỗi -->
+            <div class="video-block" data-reveal>
+                <h4 class="video-title">
+                    <i class="ph ph-video-camera"></i>
+                    Video Hướng Dẫn Thao Tác Khắc Phục Phiếu Lỗi EForm
+                </h4>
+                <div class="video-wrapper">
+                    <video controls preload="metadata">
+                        <source src="assets/video/Khac_phuc_phieu_loi.mp4" type="video/mp4">
+                        Trình duyệt của bạn không hỗ trợ phát video.
+                    </video>
+                </div>
+            </div>
+
+            <!-- Gallery Quy trình khắc phục thực tế -->
+            <div class="fix-gallery" data-reveal>
+                <h3 class="fix-gallery-title">Quy Trình Phản Hồi Khắc Phục Lỗi Trên EForm Điện Thoại</h3>
+                <div class="gallery-track">
+                    <!-- Step 1 -->
+                    <div class="gallery-item">
+                        <div class="gallery-img-box">
+                            <img src="images/content/khac_phuc/photo_1_2026-07-17_14-20-27.jpg" alt="Bước 1: Nhận tin nhắn thông báo" loading="lazy">
+                        </div>
+                        <div class="gallery-info">
+                            <span class="gallery-step-num">Bước 01</span>
+                            <h4 class="gallery-item-title">Nhận Tin Thông Báo</h4>
+                            <p class="gallery-item-desc">Hệ thống thông báo tự động có phiếu chấm lỗi chờ duyệt gửi về kênh chat nội bộ.</p>
+                        </div>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="gallery-item">
+                        <div class="gallery-img-box">
+                            <img src="images/content/khac_phuc/photo_2_2026-07-17_14-20-27.jpg" alt="Bước 2: Kiểm tra loại phiếu lỗi" loading="lazy">
+                        </div>
+                        <div class="gallery-info">
+                            <span class="gallery-step-num">Bước 02</span>
+                            <h4 class="gallery-item-title">Kiểm Tra Phiếu Lỗi</h4>
+                            <p class="gallery-item-desc">Mở link xem loại phiếu cần khắc phục (Ví dụ: phiếu <code>[PL CAMERA]</code>).</p>
+                        </div>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="gallery-item">
+                        <div class="gallery-img-box">
+                            <img src="images/content/khac_phuc/photo_3_2026-07-17_14-20-27.jpg" alt="Bước 3: Xem chi tiết yêu cầu" loading="lazy">
+                        </div>
+                        <div class="gallery-info">
+                            <span class="gallery-step-num">Bước 03</span>
+                            <h4 class="gallery-item-title">Đọc Yêu Cầu Lỗi</h4>
+                            <p class="gallery-item-desc">Xem kỹ mô tả chi tiết lỗi từ người chấm (ví dụ: vệ sinh sàn, rác, CCDC vứt lung tung).</p>
+                        </div>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="gallery-item">
+                        <div class="gallery-img-box">
+                            <img src="images/content/khac_phuc/photo_4_2026-07-17_14-20-27.jpg" alt="Bước 4: Tải ảnh khắc phục" loading="lazy">
+                        </div>
+                        <div class="gallery-info">
+                            <span class="gallery-step-num">Bước 04</span>
+                            <h4 class="gallery-item-title">Tải Ảnh Khắc Phục</h4>
+                            <p class="gallery-item-desc">Thực hiện dọn dẹp tại bưu cục, chụp ảnh có GPS/thời gian, click "Chọn files" để tải ảnh lên.</p>
+                        </div>
+                    </div>
+                    <!-- Step 5 -->
+                    <div class="gallery-item">
+                        <div class="gallery-img-box">
+                            <img src="images/content/khac_phuc/photo_5_2026-07-17_14-20-27.jpg" alt="Bước 5: Đính kèm tệp tin" loading="lazy">
+                        </div>
+                        <div class="gallery-info">
+                            <span class="gallery-step-num">Bước 05</span>
+                            <h4 class="gallery-item-title">Đính Kèm Thành Công</h4>
+                            <p class="gallery-item-desc">Kiểm tra tệp tin ảnh (Ví dụ: <code>image.jpg</code>) đã được đính kèm thành công vào form.</p>
+                        </div>
+                    </div>
+                    <!-- Step 6 -->
+                    <div class="gallery-item">
+                        <div class="gallery-img-box">
+                            <img src="images/content/khac_phuc/photo_6_2026-07-17_14-20-27.jpg" alt="Bước 6: Ghi note giải trình" loading="lazy">
+                        </div>
+                        <div class="gallery-info">
+                            <span class="gallery-step-num">Bước 06</span>
+                            <h4 class="gallery-item-title">Ghi Chú Giải Trình</h4>
+                            <p class="gallery-item-desc">Nhập nội dung giải trình bắt buộc (Ví dụ: <code>BC đã khắc phục</code>) vào ô text giải trình.</p>
+                        </div>
+                    </div>
+                    <!-- Step 7 -->
+                    <div class="gallery-item">
+                        <div class="gallery-img-box">
+                            <img src="images/content/khac_phuc/photo_7_2026-07-17_14-20-27.jpg" alt="Bước 7: Trạng thái Đã duyệt" loading="lazy">
+                        </div>
+                        <div class="gallery-info">
+                            <span class="gallery-step-num">Bước 07</span>
+                            <h4 class="gallery-item-title">Được Phê Duyệt</h4>
+                            <p class="gallery-item-desc">Gửi đi. AM/TM kiểm tra ảnh hợp lệ có GPS và duyệt phiếu thành trạng thái <code>Đã duyệt</code>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════ SECTION: TIMEMARK ══════ -->
+    <section class="section section--bg" id="timemark">
+        <div class="section-container">
+            <div class="section-head" data-reveal>
+                <span class="section-eyebrow">Quy Định Ảnh Chụp</span>
+                <h2 class="section-title">Quy Định Ảnh Minh Chứng Hợp Lệ<span class="dot">.</span></h2>
+                <p class="section-sub">Tất cả ảnh minh chứng chấm điểm và khắc phục lỗi <strong>bắt buộc phải có định vị GPS (tọa độ), thời gian và địa điểm thực tế</strong>.</p>
+            </div>
+
+            <!-- Install steps -->
+            <div class="tm-install" data-reveal>
+                <h4 class="tm-install-title">Cài Đặt Phần Mềm Gợi Ý</h4>
+                <div class="tm-install-steps">
+                    <div class="tm-install-step">
+                        <span class="tm-step-num">1</span>
+                        <div>
+                            <strong>Tải Timemark hoặc Timestamp Camera</strong>
+                            <p>Tải miễn phí từ CH Play (Android) hoặc App Store (iOS)</p>
+                        </div>
+                    </div>
+                    <div class="tm-install-step">
+                        <span class="tm-step-num">2</span>
+                        <div>
+                            <strong>Bật định vị & cấp quyền Camera</strong>
+                            <p>Cấp quyền truy cập Vị trí (GPS) để tự động đóng dấu tọa độ chính xác</p>
+                        </div>
+                    </div>
+                    <div class="tm-install-step">
+                        <span class="tm-step-num">3</span>
+                        <div>
+                            <strong>Chụp ảnh minh chứng</strong>
+                            <p>Thông tin ngày giờ, tọa độ, địa chỉ sẽ tự động được ghim trực tiếp lên ảnh chụp</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warning box -->
+            <div class="tm-warning" data-reveal style="margin-bottom: 32px;">
+                <div class="tm-warning-icon"><i class="ph ph-warning"></i></div>
+                <div>
+                    <strong>YÊU CẦU BẮT BUỘC:</strong> Tất cả ảnh chụp khi khắc phục phiếu lỗi và thực hiện bài chấm phải được chụp bằng app có định vị GPS (Timemark hoặc Timestamp Camera). Các trường hợp ảnh không gán đủ thông tin thời gian, địa điểm <strong>xem như không hợp lệ và bị từ chối duyệt</strong>.
+                </div>
+            </div>
+
+            <!-- Cam kết đọc hiểu -->
+            <div class="tm-confirm-card" id="confirmCard" data-reveal>
+                <div class="tm-confirm-icon">
+                    <i class="ph ph-shield-check"></i>
+                </div>
+                <div class="tm-confirm-content">
+                    <h4>Cam Kết Tuân Thủ Quy Định Ảnh Chụp</h4>
+                    <p>Tôi xác nhận đã đọc, hiểu rõ quy định: Mọi hình ảnh minh chứng thiếu thông tin định vị thời gian và địa điểm thực tế (GPS) sẽ bị coi là <strong>KHÔNG HỢP LỆ</strong> và sẽ bị từ chối duyệt.</p>
+                    <label class="confirm-checkbox-label">
+                        <input type="checkbox" id="confirmCheck">
+                        <span class="custom-checkbox"></span>
+                        Tôi đã đọc, hiểu và cam kết tuân thủ quy định
+                    </label>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ══════ SECTION: EFORM FLOW ══════ -->
+    <section class="section section--bg" id="eform-flow">
+        <div class="section-container">
+            <div class="section-head" data-reveal>
+                <span class="section-eyebrow">Hướng Dẫn Thao Tác</span>
+                <h2 class="section-title">Tạo Phiếu Trên EForm<span class="dot">.</span></h2>
+                <p class="section-sub">Quy trình <strong>4 bước</strong> tạo phiếu chấm điểm trên nền tảng EForm nội bộ GHN.</p>
+            </div>
+
+            <div class="flow-track">
+                <div class="flow-step" data-reveal>
+                    <div class="flow-step-card">
+                        <div class="flow-step-num">01</div>
+                        <div class="flow-step-icon"><i class="ph ph-sign-in"></i></div>
+                        <h4 class="flow-step-title">Truy Cập EForm</h4>
+                        <p class="flow-step-desc">Đăng nhập <strong>noibo.ghn.vn</strong> → Vào EForm → "Tạo phiếu mới"</p>
+                    </div>
+                    <div class="flow-connector"></div>
+                </div>
+                <div class="flow-step" data-reveal>
+                    <div class="flow-step-card">
+                        <div class="flow-step-num">02</div>
+                        <div class="flow-step-icon"><i class="ph ph-files"></i></div>
+                        <h4 class="flow-step-title">Chọn Flow Chấm Điểm</h4>
+                        <p class="flow-step-desc">Chọn nhóm <code>Phòng Quản Lý Chất Lượng (QC)</code> → Chọn flow tương ứng</p>
+                    </div>
+                    <div class="flow-connector"></div>
+                </div>
+                <div class="flow-step" data-reveal>
+                    <div class="flow-step-card">
+                        <div class="flow-step-num">03</div>
+                        <div class="flow-step-icon"><i class="ph ph-pencil-line"></i></div>
+                        <h4 class="flow-step-title">Điền Thông Tin & Chấm</h4>
+                        <p class="flow-step-desc">Điền mã bưu cục → Chấm đạt/không đạt → Đính kèm ảnh <strong>có định vị GPS/thời gian</strong></p>
+                    </div>
+                    <div class="flow-connector"></div>
+                </div>
+                <div class="flow-step" data-reveal>
+                    <div class="flow-step-card">
+                        <div class="flow-step-num">04</div>
+                        <div class="flow-step-icon"><i class="ph ph-paper-plane-tilt"></i></div>
+                        <h4 class="flow-step-title">Gửi & Theo Dõi</h4>
+                        <p class="flow-step-desc">Kiểm tra thông tin → Nhấn "Hoàn tất". Theo dõi trạng thái giải trình tại "Danh sách phiếu"</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-cta" data-reveal>
+                <a href="https://noibo.ghn.vn/eform/form/create?flowId=6a058c7b0f879cdfe070e687" class="btn-primary btn-primary--large eform-btn">
+                    Mở EForm Tạo Phiếu Ngay
+                    <span class="btn-primary-arrow"><i class="ph ph-arrow-right"></i></span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════ FOOTER ══════ -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="footer-logo">CDDV<span>.</span>Portal</span>
+                <span class="footer-ver">v7.0 · Delivery Edition</span>
+            </div>
+            <div class="footer-links">
+                <a href="https://noibo.ghn.vn/eform/form/create?flowId=6a058c7b0f879cdfe070e687" class="eform-btn">EForm Chấm Điểm</a>
+                <a href="https://docs.google.com/presentation/d/16krO55NhTLZN9nnrDbrUPUgWaLBOBHYsApJZHC1f1QI/edit" target="_blank">Tài Liệu Hướng Dẫn</a>
+                <a href="https://www.timemark.com/" target="_blank">App Timemark</a>
+            </div>
+            <div class="footer-copy">
+                © 2026 Giao Hàng Nhanh — CDDV Portal. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- ══════ POPUP MODAL XÁC NHẬN ══════ -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <div class="modal-icon">
+                <i class="ph ph-warning-octagon"></i>
+            </div>
+            <h3 class="modal-title">Cảnh Báo Quy Định Ảnh Chụp</h3>
+            <p class="modal-desc">Anh/Chị vui lòng xác nhận cam kết đã đọc và hiểu quy định ảnh chụp minh chứng (bắt buộc phải có định vị GPS, thời gian, địa điểm). Mọi hình ảnh thiếu định vị thực tế sẽ bị xem là KHÔNG HỢP LỆ và bị từ chối duyệt.</p>
+            <div class="modal-actions">
+                <button class="modal-btn-confirm" id="modalBtnConfirm">Tôi Đồng Ý & Xác Nhận</button>
+                <button class="modal-btn-close" id="modalBtnClose">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
+
+</body>
+</html>

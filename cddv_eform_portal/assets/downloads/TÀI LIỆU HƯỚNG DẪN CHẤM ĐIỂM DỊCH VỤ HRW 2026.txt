@@ -1,0 +1,860 @@
+31/03/2026
+BƯU CỤC CHUẨN 
+CHẤM ĐIỂM DỊCH VỤ 
+TRÊN      Haraworks
+
+GIỚI THIỆU VỀ DỰ ÁN
+CÁC LOẠI BÀI CHẤM
+HƯỚNG DẪN CHẤM ĐIỂM VÀ KHẮC PHỤC PHIẾU LỖI
+CHÍNH SÁCH CHẤM ĐIỂM BƯU CỤC
+
+CƠ CHẾ LOẠI LOẠI TRỪ
+
+GIỚI THIỆU VỀ DỰ ÁN
+
+
+MỤC ĐÍCH VÀ LỢI ÍCH DỰ ÁN.
+SƠ ĐỒ QUY TRÌNH CHẤM ĐIỂM TRÊN HRWS
+
+A.  MỤC ĐÍCH & LỢI ÍCH DỰ ÁN 
+
+Hỗ trợ kiểm soát 
+Giúp kiểm soát hoạt động của các đối tượng (bưu cục, nhân viên,...) theo đúng quy trình và chuẩn mực do công ty quy định.
+
+Đo lường và cải thiện
+Theo dõi và nâng cấp trải nghiệm khách hàng nhằm cải thiện chất lượng dịch vụ đồng bộ trên toàn hệ thống.
+
+Tạo ra môi trường cạnh tranh
+Thúc đẩy cạnh tranh tích cực giữa các bưu cục nhằm nâng cao chất lượng dịch vụ; góp phần xây dựng hình ảnh công ty
+
+Hỗ trợ tính toán thưởng, phạt
+Làm căn cứ để tính toán thưởng, phạt dựa trên kết quả đánh giá thực tế.
+
+
+B.  SƠ ĐỒ QUY TRÌNH CHẤM ĐIỂM TRÊN HRWS
+
+Thực hiện chấm điểm trên từng tiêu chí
+Trường hợp tiêu chí
+Chấm đạt cho tiêu chí
+Chấm không đạt và đính kèm bằng chứng
+Hoàn tất phiếu chấm
+Hệ thống phát sinh phiếu không đạt
+Nhận thông báo, xử lý và cung cấp bằng chứng
+Trường hợp bằng chứng
+Hoàn Tất
+ĐẠT
+KHÔNG ĐẠT
+KHÔNG ĐẠT
+ĐẠT
+
+CÁC LOẠI BÀI CHẤM
+
+BÀI CHẤM HÀNG NGÀY 
+BÀI CHẤM HÀNG TUẦN
+
+CÁC LOẠI BÀI CHẤM & TIÊU CHÍ
+TÊN BÀI CHẤM
+[HÀNG NGÀY] BẢNG ĐÁNH GIÁ BC GHN 
+[HÀNG TUẦN] BẢNG ĐÁNH GIÁ BC GHN`
+THỜI GIAN CHẤM
+18h00 - 22h00: Thứ 2 - Thứ 6
+18h00 - 22h00: Thứ 7
+ĐỐI TƯỢNG
+AAM/AM/TBC/NVXL
+AAM/AM/TBC/NVXL
+
+TIÊU CHÍ
+1. KHU VỰC MẶT TIỀN BƯU CỤC
+2 .TOÀN CẢNH LAYOUT KHU VỰC  NVXL
+3. TOÀN CẢNH LAYOUT KHU VỰC NVPTTT
+4.  NHÀ VỆ SINH
+5.  TÁC PHONG NHÂN VIÊN BƯU CỤC
+6. BẢNG ĐĂNG KÝ KINH DOANH
+1. KHU VỰC MẶT TIỀN BƯU CỤC
+2. BẢNG ĐĂNG KÝ KINH DOANH
+3. CƠ SỞ VẬT CHẤT TẠI BƯU CỤC
+4. KHU VỰC CHIA TUYẾN NVPTTT
+5. NHÀ VỆ SINH
+6. THIẾT BỊ PCCC
+7. KHU VỰC CHỨA CCDC, VPP VÀ CCDC
+8. BẢNG THÔNG BÁO
+9. DÁN MẪU THÔNG BÁO LẮP CAMERA
+10. ĐỒNG PHỤC NHÂN VIÊN 
+
+BÀI CHẤM HÀNG NGÀY
+
+1. KHU VỰC MẶT TIỀN BƯU CỤC 
+- KV này bao gồm cả BẢNG HIỆU và KHU VỰC ĐẬU XE MÁY
+Cách chụp:
++ Đúng:
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được biển hiệu và toàn cảnh bao quát mặt tiền thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác, không đồ ăn thức uống, không vật dụng cá nhân và vật dụng thừa.
++ Không đạt:
+- Hình chụp không thấy được toàn cảnh mặt tiền, bao gồm biển hiệu Bưu cục.
+- Hình chụp không thấy được khu vực đậu xe.
+- Khu vực mặt tiền không thông thoáng, không gọn gàng, có rác thải.
+Link hình ảnh minh hoạ
+
+
+
+A. BÀI CHẤM HÀNG NGÀY
+2
+
+2. TOÀN CẢNH LAYOUT KHU VỰC NVXL 
+- KV này được dùng cho việc NVXL thao tác.
+
+Cách chụp: 
++ Đúng:
+- Hình ảnh phải bao quát, thấy được vị trí bàn làm việc của NVXL.
+- Nếu 1 hình ảnh không bao quát được toàn cảnh, có thể chụp nhiều hình đính kèm vào tiêu chí.
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được toàn bộ KV vận hành thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác, không đồ ăn thức uống, không vật dụng cá nhân và vật dụng thừa.
+
++ Không đạt:
+- Hình ảnh không bao quát, không thấy được vị trí bàn làm việc của NVXL.
+- Khu vực không gọn gàng, có rác thải.
+
+Link hình ảnh minh hoạ
+Link in mẫu biển định vị: Mẫu Biển Định Vị
+A. BÀI CHẤM HÀNG NGÀY
+
+3. TOÀN CẢNH LAYOUT KHU VỰC NVPTTT 
+
+- KV này được dùng cho việc NVPTTT
+
+Cách chụp:
++ Đúng:
+- Hình ảnh phải bao quát, thấy được khu vực làm việc bao gồm khu vực để rổ nhựa, sort hàng của NV PTTT.
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được toàn bộ KV thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác, không đồ ăn thức uống, không vật dụng cá nhân và vật dụng thừa.
+
++ Không đạt:
+- Chụp không đủ 2 hình ảnh gồm 1 hình từ cửa BC chụp bao quát hướng vào trong, 1 hình từ cuối BC chụp bao quát hướng ra ngoài cửa chính.
+- Hình ảnh không bao quát được toàn cảnh hoặc khu vực không gọn gàng, có rác thải
+
+Link hình ảnh minh hoạ
+
+
+
+
+A. BÀI CHẤM HÀNG NGÀY
+
+4. NHÀ VỆ SINH 
+- Nhà vệ sinh cá nhân hoặc nhà vệ sinh công cộng.
+Cách chụp:
++ Đúng:- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được toàn bộ KV nhà vệ sinh thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác.
++ Không đạt:- Khu vực Nhà vệ sinh không gọn gàng, có rác thải.
+
+Link hình ảnh minh hoạ
+
+
+
+
+A. BÀI CHẤM HÀNG NGÀY
+
+5. ĐỒNG PHỤC
+
+- Hình ảnh nhân viên là bộ mặt của Công ty.
+
+Cách chụp: 
++ Đúng: (Hình ảnh 1)
+- Hình chụp thấy được toàn cảnh nhân viên thì chỉ cần chụp 1 tấm (Khoảng cách trung bình 2 mét), nếu hình chụp gần không đủ bao quát thì phải chụp nhiều hình đính kèm vào tiêu chí.
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được toàn bộ tất cả nhân viên có mặt tại BC thời điểm đó.
+
++ Không đạt: (Hình ảnh 2 và 3)
+- Nhân viên không tuân thủ quy định đồng phục theo Chính sách nhận diện thương hiệu và hành vi Bưu cục.
+- Hình chụp không thấy được toàn cảnh bao quát.
+- Hình chụp không thấy được toàn bộ tất cả nhân viên có mặt tại BC thời điểm đó.
+
+*** Lưu ý: không thỏa các điều kiện trên, tiêu chí này KHÔNG ĐẠT.
+Ví dụ: nhân viên mang dép, tiêu chí này KHÔNG ĐẠT.
+
+Link hình ảnh minh hoạ
+
+
+
+A. BÀI CHẤM HÀNG NGÀY
+
+6. BẢNG ĐĂNG KÝ KINH DOANH
+
+Nhân viên chụp bảng đăng ký kinh doanh được gắn trước cửa Bưu cục
+
+Cách chụp:- Đảm bảo hình chụp cần thấy được đầy đủ, rõ thông tin trên bảng.
+
+*** Lưu ý: không thoả các điều kiện trên, tiêu chí này KHÔNG ĐẠT.
+
+
+
+A. BÀI CHẤM HÀNG NGÀY
+
+BÀI CHẤM HÀNG TUẦN
+
+
+1. KHU VỰC MẶT TIỀN BƯU CỤC 
+- KV này bao gồm cả BẢNG HIỆU và KHU VỰC ĐẬU XE MÁY
+Cách chụp:
++ Đúng:
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được biển hiệu và toàn cảnh bao quát mặt tiền thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác, không đồ ăn thức uống, không vật dụng cá nhân và vật dụng thừa.
++ Không đạt:
+- Hình chụp không thấy được toàn cảnh mặt tiền, bao gồm biển hiệu Bưu cục.
+- Hình chụp không thấy được khu vực đậu xe.
+- Khu vực mặt tiền không thông thoáng, không gọn gàng, có rác thải.
+Link hình ảnh minh hoạ
+
+
+
+B. BÀI CHẤM HÀNG TUẦN
+2
+
+2. BẢNG ĐĂNG KÝ KINH DOANH
+
+Nhân viên chụp bảng đăng ký kinh doanh được gắn trước cửa Bưu cục
+
+Cách chụp:- Đảm bảo hình chụp cần thấy được đầy đủ, rõ thông tin trên bảng.
+
+*** Lưu ý: không thỏa các điều kiện trên, tiêu chí này KHÔNG ĐẠT.
+
+
+
+B. BÀI CHẤM HÀNG TUẦN
+
+3. CƠ SỞ VẬT CHẤT TẠI BƯU CỤC
+
+- Tổng quan toàn cảnh layout của Bưu cục
+
+Cách chụp:
++ Đúng:
+- Chụp 2 hình ảnh, một hình từ ngoài vào trong và một hình từ trong ra ngoài. Hình ảnh phải bao quát, thấy được toàn cảnh layout của bưu cục bao gồm khu tiếp khách, xử lý hàng, lưu trữ, lối đi chính nhằm kiểm tình trạng chung của bàn ghế, kệ, máy móc, sàn nhà, trần nhà, hệ thống điện, ánh sáng. Đảm bảo đủ dùng và không hư hỏng. Thể hiện luồng di chuyển, sắp xếp khu vực làm việc, gọn gàng của layout
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được toàn bộ KV thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác, không đồ ăn thức uống, không vật dụng cá nhân và vật dụng thừa.
+
++ Không đạt:
+- Chụp không đủ 2 hình ảnh gồm 1 hình từ cửa BC chụp bao quát hướng vào trong, 1 hình từ cuối BC chụp bao quát hướng ra ngoài cửa chính.
+- Hình ảnh không bao quát được toàn cảnh hoặc khu vực không gọn gàng, có rác thải.
+
+
+
+B. BÀI CHẤM HÀNG TUẦN
+
+4. KHU VỰC CHIA TUYẾN NVPTTT
+
+- Khu vực được dùng cho việc NVPTTT  nhằm đảm bảo nhận diện rõ ràng và phân loại chính xác hàng hóa, mỗi sọt hàng tại khu vực NVPTTT đều được gắn bảng tên và tuyến phát tương ứng với từng nhân viên
+
+Cách chụp:
++ Đúng:
+- Hình ảnh phải bao quát, thấy được khu vực làm việc bao gồm khu vực để rổ nhựa, sort hàng của NVPTTT. 
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được toàn bộ KV thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác, không đồ ăn thức uống, không vật dụng cá nhân và vật dụng thừa.
+- Mỗi sọt hàng có bảng tên + tuyến NV chạy theo format: Tên tuyến (Địa bàn) + IDNV
+
++ Không đạt:
+- Sọt hàng không có bảng tên tuyến theo yêu cầu, không đáp ứng một trong các yêu cầu trên
+- Hình ảnh không bao quát được toàn cảnh hoặc khu vực không gọn gàng, có rác thải.
+
+
+
+B. BÀI CHẤM HÀNG TUẦN
+
+5. NHÀ VỆ SINH 
+- Nhà vệ sinh cá nhân hoặc nhà vệ sinh công cộng.
+Cách chụp:
++ Đúng:- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được toàn bộ KV nhà vệ sinh thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác.
++ Không đạt:- Khu vực Nhà vệ sinh không gọn gàng, có rác thải.
+
+Link hình ảnh minh hoạ
+
+
+
+
+B. BÀI CHẤM HÀNG TUẦN
+
+6. THIẾT BỊ PCCC
+
+- Thiết bị PCCC: 1 bộ tiêu lệnh - 2 bình chữa cháy.
+
+Cách chụp:
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được CCDC trên đầy đủ số lượng, tình trạng có hoặc không phải ghi chú đầy đủ thông tin và số lượng vào bài chấm, KV lưu trữ CCDC thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác, không đồ ăn thức uống, không vật dụng cá nhân và vật dụng thừa.
+
+*** Lưu ý: không thoả các điều kiện trên, tiêu chí này KHÔNG ĐẠT.
+Ví dụ: không có đầy đủ thiết bị PCCC, tiêu chí này KHÔNG ĐẠT.
+
+
+
+B. BÀI CHẤM HÀNG TUẦN
+
+7. KHU VỰC CHỨA CCDC, VPP VÀ CCDC
+
+- Khu vực chứa công cụ dụng cụ (CCDC), văn phòng phẩm (VPP) hiện tại sẽ chỉ đặt đủ dùng, không tồn quá nhiều để lưu trữ tại BC 
+- Bao gồm các loại CCDC cơ bản sau: cân điện tử/ cân cơ (100kg), máy in, pallet, khung cố định bao tải, sóng nhựa, thiết bị PCCC, súng barcode... theo chuẩn từng khu vực. Các vật dụng hư hỏng được thu gom, bảo quản riêng tại kho.
+
+Cách chụp:
+- Hình chụp thấy được toàn cảnh khu vực thì chỉ cần chụp 1 tấm (Khoảng cách trung bình 2 mét), nếu hình chụp gần không đủ bao quát thì phải chụp nhiều hình đính kèm vào tiêu chí.
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được toàn bộ KV vận hành thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác, không đồ ăn thức uống, không vật dụng cá nhân và vật dụng thừa. 
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được tất cả các loại CCDC trên, tình trạng có hoặc không phải ghi chú đầy đủ thông tin và số lượng vào bài chấm, KV lưu trữ CCDC thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác, không đồ ăn thức uống, không vật dụng cá nhân và vật dụng thừa.
+*** Lưu ý: không thoả các điều kiện trên, tiêu chí này KHÔNG ĐẠT.
+Ví dụ: CCDC vứt lung tung không dọn dẹp, tiêu chí này KHÔNG ĐẠT.
+
+
+
+B. BÀI CHẤM HÀNG TUẦN
+
+8. BẢNG THÔNG BÁO
+
+- Loại bảng màu xanh dương tuyên truyền các thông tin tại BC và DS số điện thoại liên lạc khẩn cấp (AM,GĐV, Công An, PCCC, TBC,..)
+
+Cách chụp:
++ Đúng:
+- Hình chụp thấy được toàn cảnh khu vực bảng được treo trên cao (cạnh trên cách chân tường 1m8) ngay ngắn, không hư hỏng. Khu vực phía dưới, xung quanh gọn gàng, sạch sẽ, thông thoáng.
+- Bảng thông báo thể hiện đầy đủ các thông tin, cụ thể: 7 file chính sách + mục lục bên legal, chuyên mục tin tức, các điều cấm (EB và L&D), contact liên hệ khẩn cấp
+
+Link chính sách: tại link 
+
++ Không đạt:
+- Thông tin trên bảng thông báo treo không ngay ngắn, dán băng keo đè lên thông tin
+- Thông tin chứa không đầy đủ các yêu cầu bên trên
+- Khu vực treo bảng không ngăn nắp, có rác thải.
+
+
+
+B. BÀI CHẤM HÀNG TUẦN
+
+9. DÁN MẪU THÔNG BÁO LẮP CAMERA
+
+Bưu cục in màu hoặc in trắng đen bằng khổ giấy A4 theo mẫu (Link in Mẫu tại đây.) => Dán/ ghim Mẫu Thông Báo Lắp Camera lên Bảng Thông Báo của Bưu Cục.
+
+Cách chụp:
+- Tờ thông báo phải được in rõ mực không bị mờ/ lem mực.
+- Hình chụp phải thấy được nội dung tiêu đề của thông báo.
+- Tờ thông báo gắn đúng với phần chuyên mục đã quy hoạch theo “Bộ Quy Chuẩn Bảng Thông Báo” ban hành bởi phòng Truyền thông Nội bộ & Thương hiệu Tuyển dụng (gọi tắt là EB)
+
+*** Lưu ý: Trường hợp Bưu Cục không có bảng thông báo Bưu Cục dán trực tiếp lên tường tại khu vực tiếp Khách Hàng.
+
+
+
+B. BÀI CHẤM HÀNG TUẦN
+
+10. ĐỒNG PHỤC
+
+- Hình ảnh nhân viên là bộ mặt của Công ty.
+
+Cách chụp: 
++ Đúng: (Hình ảnh 1)
+- Hình chụp thấy được toàn cảnh nhân viên thì chỉ cần chụp 1 tấm (Khoảng cách trung bình 2 mét), nếu hình chụp gần không đủ bao quát thì phải chụp nhiều hình đính kèm vào tiêu chí.
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được toàn bộ tất cả nhân viên có mặt tại BC thời điểm đó.
+
++ Không đạt: (Hình ảnh 2 và 3)
+- Nhân viên không tuân thủ quy định đồng phục theo Chính sách nhận diện thương hiệu và hành vi Bưu cục.
+- Hình chụp không thấy được toàn cảnh bao quát.
+- Hình chụp không thấy được toàn bộ tất cả nhân viên có mặt tại BC thời điểm đó.
+
+*** Lưu ý: không thỏa các điều kiện trên, tiêu chí này KHÔNG ĐẠT.
+Ví dụ: nhân viên mang dép, tiêu chí này KHÔNG ĐẠT.
+
+Link hình ảnh minh hoạ
+
+
+
+B. BÀI CHẤM HÀNG TUẦN
+
+HƯỚNG DẪN CHẤM VÀ KHẮC PHỤC PHIẾU LỖI
+CÁCH THỨC CHẤM ĐIỂM TRÊN HRWS
+HƯỚNG DẪN KHẮC PHỤC PHIẾU KHÔNG ĐẠT
+CÁCH KHẮC PHỤC LỖI HỆ THỐNG THƯỜNG GẶP.
+CÁC LƯU Ý VỀ BÀI CHẤM & HỆ THỐNG.
+
+A. CÁCH THỨC CHẤM ĐIỂM TRÊN HRWS
+HƯỚNG DẪN THAO TÁC CHẤM BÀI HÀNG NGÀY & HÀNG TUẦN
+
+KHÁI NIỆM
+CHẤM ĐIỂM 
+ĐỊNH KỲ 
+Bưu cục chấm điểm hàng ngày theo lịch.
+
+TBC
+NVXL
+
+B. HƯỚNG DẪN KHẮC PHỤC PHIẾU KHÔNG ĐẠT
+
+
+Không đăng nhập được
+
+Đang chấm bị dừng bài chấm
+
+Đang chấm bị thoát ứng dụng
+
+Đang Up ảnh bị thoát ra
+
+Màn hình ứng dụng trắng xoá
+=> Xoá dữ liệu trình duyệt, xoá app cũ, tải phiên bản mới nhất, kiểm tra lại chất lượng mạng, hoặc thay đổi qua máy bạn khác chấm thử.
+C. CÁCH KHẮC PHỤC LỖI - TRÊN IOS
+
+
+
+Xóa Cache của Chrome: https://www.youtube.com/watch?v=hi6JuZp7dHY
+Xóa Cache của App HRW: https://www.youtube.com/watch?v=yGQv5mCZfmU
+C. CÁCH KHẮC PHỤC LỖI - TRÊN ANDROID
+
+
+
+CÁCH TÌM BÀI CHẤM VÀ PHIẾU KHÔNG ĐẠT
+Kiểm soát được các bài chấm định kỳ, hoặc bài chấm chấm chủ động tạo ra.
+Có thể dùng mục [Bộ lọc] để tìm lại các bài chấm đã chấm và chưa chấm trong KV quản lý.
+Kiểm soát được các phiếu không đạt (phiếu lỗi) cần khắc phục trong quá trình chấm bài.
+Có thể dùng mục [Bộ lọc] để tìm phiếu không đạt chưa trễ hạn và trễ hạn theo từng BC.
+=> Bộ lọc có thể tìm được tất cả dữ liệu của TOÀN QUỐC.
+MINH HOẠ TÌM BÀI CHẤM VÀ PHIẾU KHÔNG ĐẠT
+D. CÁC LƯU Ý VỀ BÀI CHẤM VÀ HỆ THỐNG
+
+
+
+2.    LƯU Ý ĐỐI VỚI BÀI CHẤM HÀNG NGÀY
+2.1.	Quá thời gian chấm, bài chấm sẽ không mở lại được.
+=> Hệ thống xuất bài 1 lần toàn quốc, muốn mở lại sẽ phải mở tất cả toàn quốc, khi đó sẽ ảnh hưởng đến các Bưu cục đã chấm xong sẽ phải chấm lại nên không hỗ trợ mở lại các bài chấm quá hạn
+2.2.	Nhân viên nhận bài chấm hàng ngày theo cơ cấu HRW
+=> Nhân viên nào đang được phân quyền làm việc tại Bưu cục nào sẽ nhận được bài chấm tại đó, NV muốn chấm bài khác BC phải được HRM điều chuyển mới nhận được bài chấm khác BC.
+2.3.	Không thể chấm bù bài chấm khi quên chấm bài
+=> Bài chấm định kỳ [HÀNG NGÀY] không thể chấm bù bằng bài chấm chủ động của [QUẢN LÝ] vì chính sách đang khác nhau.
+MINH HOẠ CÁC TRƯỜNG HỢP BÀI CHẤM HÀNG NGÀY
+D. CÁC LƯU Ý VỀ BÀI CHẤM VÀ HỆ THỐNG
+
+
+
+3.    LƯU Ý CHUNG - CHẤM ĐIỂM ĐỊNH KỲ
+     3.1.  Không thể tắt bất kì loại bài chấm nào trên hệ thống
+=> Không thể tắt bất kì loại bài chấm nào trên hệ thống do sẽ ảnh hưởng đến tất cả các Bưu cục khác trong cùng 1 khu vực sẽ bị mất bài chấm theo vì hệ thống xuất bài chấm tự động 1 lần toàn quốc.
+     3.2. Ví dụ các trường hợp sau:
+Bưu cục sắp trả mặt bằng => cần thông báo với bên Finance để xóa bỏ hoàn toàn tên BC trên hệ thống để không xuất bài được nữa.
+Bưu cục sắp trả mặt bằng => không còn bất kì nhân viên nào trong hệ thống của BC đó nữa thì hệ thống không xuất bài hàng ngày cho NVXL và TBC (do hệ thống xuất bài theo chức danh)
+Bưu cục là BC hệ thống (ở chung BC vật lý) => dùng hình ảnh Mail HRW + Link EF được confirm đính kèm vào khi chấm để làm bằng chứng chấm [Đạt]
+Bưu cục vẫn còn trong quyền quản lý => AM có thể dùng hình ảnh Mail HRW + Link EF được confirm đính kèm vào khi chấm đủ số lượng target.
+MINH HOẠ GHI CHÚ PHIẾU CHẤM
+D. CÁC LƯU Ý VỀ BÀI CHẤM VÀ HỆ THỐNG
+
+4.    LƯU Ý TRẠNG THÁI PHIẾU KHÔNG ĐẠT 
+4.1. Dashboard sẽ lấy tất cả phiếu lỗi có trạng thái là “trễ hạn" để tính phạt.
+=> Hoàn tất trễ hạn & Chưa hoàn tất trễ hạn đều sẽ bị áp chính sách.
+
+- Trễ hạn: phiếu không đạt đã đóng hệ thống.
+- Không trễ hạn: phiếu không đạt vẫn có cơ hội gian hạn thời gian.
+
+4.2.2 Phiếu không đạt sẽ chốt trạng thái vào ngày cuối cùng của tháng
+=> Vì vậy nếu trường hợp phiếu “Chưa hoàn tất trễ hạn" muốn gia hạn thời gian phải gia hạn trước ngày chốt dữ liệu, và được gia hạn lại ở tháng sau.
+
+*** Quyền gia hạn thời gian này chỉ dành GĐV và 1 AM Admin giữ quyền gia hạn cho Vùng, mục đích Vùng tự cân nhắc lỗi gia hạn BC cung cấp lý do hợp lý không.
+MINH HỌA TRẠNG THÁI PHIẾU LỖI
+D. CÁC LƯU Ý VỀ BÀI CHẤM VÀ HỆ THỐNG
+
+Các tiêu chí đã được confirm loại trừ trường hợp nếu đã lỡ chấm [Không đạt], 
+=> thì có thể dùng bằng chứng hiện có (dùng hình ảnh mail HRW + Link EF) để cập nhật khắc phục.
+Các tiêu chí đã được confirm loại trừ hoàn toàn có thể chấm [Đạt], 
+=> chỉ cần dùng bằng chứng hiện có (dùng hình ảnh mail HRW + Link EF) để cập nhật khi chấm.
+MINH HOẠ GHI CHÚ PHIẾU LỖI
+5.   TIÊU CHÍ KHÔNG ĐẠT ĐÃ ĐƯỢC CONFIRM
+*** LƯU Ý:
+Phạt phiếu không đạt chưa khắc phục xong sẽ cộng dồn qua các tháng, bắt đầu từ thời điểm 01/04.
+VD: 
+T4: Còn 10 phiếu chưa khắc phục xong
+Nếu không gia hạn tháng sau => sẽ chốt phạt 30/04
+T5: Nếu các phiếu T4 vẫn chưa khắc phục xong
+Nếu không gia hạn tháng sau => sẽ chốt phạt 31/05 cả phiếu T4 + T5
+D. CÁC LƯU Ý VỀ BÀI CHẤM VÀ HỆ THỐNG
+
+Các tiêu chí đã chấm [Không đạt] 
+lần chấm tiếp theo sẽ chấm [Đạt], có thể chụp 1 bức ảnh toàn cảnh BC và note ghi chú ngày giờ đã chấm lần đầu, để QC nắm tình hình khi xem lại bài chấm.
+
+Tiêu chí đã chấm [Không đạt] 
+có thể gia hạn thời gian phù hợp để chờ đến ngày đầy đủ các thông tin khắc phục thì cập nhật vào.
+VÍ DỤ
+Thứ 2
+Thứ 3
+Thứ 4
+Thứ 5
+Chấm
+[Không đạt]
+[Đạt]
+[Đạt]
+[Đạt]
+Nội dung phiếu lỗi
+Nội dung lỗi cần khắc phục
+Ngày giờ đã chấm lỗi hôm thứ 2
+Ngày giờ đã chấm lỗi hôm thứ 2
+Ngày giờ đã chấm lỗi hôm thứ 2
+Mục đích
+Dùng tiêu chí này để chờ đến ngày khắc phục
+Không trùng ngày đầu đã chấm
+Không trùng ngày đầu đã chấm
+Không trùng ngày đầu đã chấm
+6.   KHÔNG CHẤM TRÙNG TIÊU CHÍ PHIẾU KHÔNG ĐẠT
+D. CÁC LƯU Ý VỀ BÀI CHẤM VÀ HỆ THỐNG
+
+CHÍNH SÁCH CHẤM ĐIỂM BƯU CỤC
+
+MỨC PHẠT THIẾU BÀI CHẤM MỚI.
+MỨC PHẠT PHIẾU LỖI KHÔNG KHẮC PHỤC.
+CHÍNH SÁCH CHẤM ĐIỂM.
+
+A.  MỨC PHẠT THIẾU BÀI CHẤM
+
+Đối tượng áp dụng: GĐV,AM, TBC, NVXL.
+Mức phạt: 100,000 đồng/ lần thiếu bài chấm.
+Đối với bài chấm [HÀNG NGÀY] BÀI KIỂM TRA KIẾN THỨC, mức phạt áp dụng tương đương mức phạt thiếu bài chấm định kỳ..
+Bưu Cục không thực hiện bài chấm và bài kiểm tra.
+Bưu Cục chỉ thực hiện bài chấm, nhưng không hoàn tất bài kiểm tra.
+Bưu Cục có thực hiện bài kiểm tra nhưng không hoàn tất bài chấm.
+Bưu Cục có kết quả không đạt bài kiểm tra, tương đương điểm số dưới 10.
+MỤC
+Chính Sách HRWS
+Lý Do 
+[CẤP QUẢN LÝ V.2] - BẢNG ĐÁNH GIÁ BC GHN
+Phạt dựa trên số lượng bưu cục AM quản lý chưa chấm.
+Không nhận chung bài chấm, nhận riêng lẻ từng kỳ.
+[HÀNG NGÀY V.3] - BẢNG ĐÁNH GIÁ BC GHN
+NVXL thiếu bài chấm, phạt liên đới TBC
+Tất cả NV trong BC đều nhận 1 loại bài chấm cùng nhau
+HÀNG NGÀY [KIỂM TRA KIẾN THỨC]
+Phạt dựa trên chức danh nhận bài (không phạt liên đới TBC)
+Không nhận chung bài kiểm tra, nhận riêng lẻ từng ngày
+Lưu ý: Chính sách được áp dụng cho các dữ liệu chốt phạt từ 01.05.2023
+
+B. MỨC PHẠT PHIẾU LỖI KHÔNG KHẮC PHỤC 
+
+Chức danh
+Mức phạt
+Nhân Viên Xử Lý
+100,000 đồng/ lỗi
+Mức phạt áp dụng toàn bộ Nhân viên Xử Lý của Bưu cục
+Trường Bưu Cục
+100,000 đồng/ lỗi
+Quản Lý Khu Vực/ Quản Lý Khu Vực Thử Vai
+10% trên tổng mức phạt thuộc các Bưu Cục quản lý
+Lưu ý: Tất cả phiếu lỗi không khắc phục sẽ được chốt phạt hàng tháng, đến khi bưu cục khắc phục hoàn tất mới dừng phạt
+
+C. CHÍNH SÁCH CHẤM ĐIỂM BƯU CỤC 
+
+ Link Chính sách ban hành và áp dụng ngày 10/10/2022
+
+
+CƠ CHẾ LOẠI TRỪ
+E-FORM TRONG THỜI HẠN.
+CÁC TRƯỜNG HỢP XÁC NHẬN MIỄN PHẠT.
+
+A. TỔNG HỢP THÔNG TIN GỬI E-FORM HRW
+Các trường hợp phát sinh không thể thực hiện chấm bài hoặc khắc phục phiếu lỗi trên App Mobile, thì vẫn tổng hợp thông tin bằng chứng loại trừ và thông báo lên E-Form như hiện tại vẫn làm: 
+Tạo yêu cầu giải trình tại link: https://noibo.ghn.vn/eform/form/create?flowId=6526253de48483cfb86aed30 
+
+TRONG THÁNG:  MIỄN TRỪ TẠI THỜI ĐIỂM PHÁT SINH.
+VÍ DỤ CÁCH LÀM ĐÚNG: Bưu cục quá tải vận hành: AM đề xuất loại trừ từ ngày .... đến ngày ....=> GĐV duyệt => Ok
+Dành cho các trường hợp phát sinh hàng ngày trong vận hành cần báo loại trừ đến GĐV.
+Lưu ý: Các lý do hợp lý sẽ luôn được xem xét và loại trừ, Không duyệt loại trừ cho bất kỳ lý do nào gửi trễ hơn cuối tháng hoặc ngay khi các team chức năng tính chính sách. Nếu trễ qua tận tháng sau Team CH có quyền từ chối bất kì Mail/ E-Form nào mà không cần phản hồi.
+CUỐI THÁNG: GIẢI TRÌNH GIẢM PHẠT CUỐI THÁNG.
+Dành cho toàn Vùng tổng hợp vào 1 file duy nhất các trường hợp cần giải trình loại trừ.
+Vùng cần có 1 người AM Admin do GĐV yêu cầu, tổng hợp tất cả thông tin phạt từ Dashboard, giải trình bằng các Link E-form miễn trừ phát sinh trước đó đã tạo trong tháng vào file tổng hợp.
+E-form cần được GĐV duyệt trước 24h ngày 7 tháng N + 1 (để xác nhận miễn phạt cho tháng N), sau thời gian này CnB từ chối E-Form
+LINK MẪU FILE: Tải tại đây!
+
+
+
+
+
+
+B. CÁC TRƯỜNG HỢP XÁC NHẬN MIỄN PHẠT
+BC mới mở dưới 1 tháng không loại trừ thiếu số lượng bài chấm, chỉ loại trừ các phiếu không đạt (phiếu lỗi)
+VD: BC bắt đầu vận hành từ ngày 10/2/2025 thì loại trừ các phiếu không đạt (phiếu lỗi) đến ngày 10/3/2025.
+
+Các trường hợp phát sinh cần lưu lại bằng chứng hoặc báo lên các group để TM xác định và ghi nhận lại tình trạng tại thời điểm đó, tốt nhất vẫn nên xác nhận các vấn đề phát sinh qua E-form.
+
+Các trường hợp có vấn đề vận hành hoặc nhân sự đều cần xác nhận bới GĐV/ HRBP.
+
+AM chủ động cập nhật tình hình Bưu cục vào E-form thông báo GĐV xác nhận loại trừ, để cuối tháng người giữ vai trò AM admin của Vùng tổng hợp.
+
+Admin Vùng viết E-form tổng hợp miễn phạt phải kèm link E-form của từng BC có xác nhận loại trừ.
+
+*** Lưu ý:
+Khi có BƯU CỤC ĐÓNG CỬA (chưa xoá khỏi hệ thống HRW), AM tạo EF (E-form) - QUY TRÌNH ĐÓNG MÃ BƯU CỤC/KHO để tắt hoàn toàn Bưu cục trên hệ thống HRW, nếu không thì hệ thống vẫn xuất bài chấm hàng ngày, và AM vẫn phải chịu target chấm chủ động từng kỳ trên dashboard.
+
+
+
+
+
+
+THANK YOU
+Presented by CH Department
+08/08/2023
+
+Link hướng dẫn chi tiết thao tác chấm 
+B1
+B2
+B4
+B5
+B3
+HƯỚNG DẪN THAO TÁC CHẤM BÀI KIỂM TRA
+A. CÁCH THỨC CHẤM ĐIỂM TRÊN HRWS
+
+
+B6
+B7
+B8
+B9
+B10
+Link hướng dẫn chi tiết thao tác chấm 
+HƯỚNG DẪN THAO TÁC CHẤM BÀI KIỂM TRA
+A. CÁCH THỨC CHẤM ĐIỂM TRÊN HRWS
+
+
+BÀI CHẤM TRƯỚC EVENT
+
+BÀI CHẤM HÀNG TUẦN
+
+Cách làm:
+Bước 1: Vào mục XEM HƯỚNG DẪN để lấy link và thực hiện bài kiểm tra. 
+Đăng nhập link bằng tài khoản app HRW.
+BC xem phần tài liệu ôn tập kiến thức cũ và cập nhật kiến thức. 
+BC trả lời một số câu hỏi liên quan tài liệu ôn tập.
+Bước 2: Sau khi thực hiện bài kiểm tra, bấm HOÀN TẤT bài chấm HRW.
+
+Lưu ý:
+
+Sau khi trả lời BCH bài kiểm tra BC cần hoàn tất để xem kết quả bài kiểm tra. Hệ thống sẽ ghi nhận 0 điểm nếu không hoàn tất lưu bài kiểm tra.
+Lịch bắn bài: Thứ Hai/Tư/Sáu - NVXL, Thứ Ba/Năm/Bảy - TBC
+BC cần hoàn thành bài kiểm tra đúng 10/10 câu.
+BC có thể làm nhiều lần để đạt bài kiểm tra từ 10 điểm
+
+
+
+ A. BÀI KIỂM TRA KIẾN THỨC
+
+
+B. E-FORM GỬI TRONG THỜI HẠN
+Chỉ chấp nhận các trường hợp loại trừ được thực hiện bằng E-Form.
+ Các lý do hợp lý sẽ được xem xét và loại trừ, tuy nhiên chỉ chấp nhận các trường hợp gửi loại trừ ngay tại thời điểm phát sinh, hoặc chậm nhất sau 7 ngày làm việc. (Hình ảnh minh họa)
+
+C. BÀI CHẤM TRƯỚC EVENT
+
+1. KHU VỰC LƯU ĐƠN HÀNG LẤY CHỜ BẮN KIỂM
+
+- KV này được định vị gồm 1 biển:
++ KHU VỰC LƯU ĐƠN HÀNG LẤY CHỜ BẮN KIỂM (in trắng đen bằng giấy A4) => Mẫu tải in tại đây !
+- Các biển định vị sử dụng trong kì Event được in trắng đen bằng giấy A4 này có thể dán 1 lần sử dụng đến hết năm (hoặc đến khi có thông báo mới).
+
+Cách chụp:
++ Đúng:
+- Dán biển định vị sử dụng trong kì Event được in trắng đen bằng giấy A4
+- Hình chụp thấy được toàn bộ KV là không gian trống, thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác, không đồ ăn thức uống, không vật dụng cá nhân và vật dụng thừa (khoảng cách trung bình 2 mét), nếu hình chụp gần không thấy được bao quát thì phải chụp nhiều hình đính kèm vào tiêu chí.
+
++ Không đạt: 
+- Không có biển định vị khu vực.
+- Dán băng keo trong (màu) đè lên trên biển định vị, dán không ngay ngắn, dán cao không đều nhau, mép dưới biển định vị cách mặt đất thấp/ cao hơn 1m8.
+- Hình không thấy toàn bộ khu vực hoặc khu vực không gọn gàng, vệ sinh
+1
+2
+Link hình ảnh minh hoạ
+
+C. E-FORM GỬI NGOÀI THỜI HẠN
+
+-	 Các trường hợp loại trừ trễ hơn 7 ngày phát sinh, chỉ được tính tối đa lùi về 7 ngày từ thời điểm tạo E-Form. (Hình ảnh minh họa)
+
+C. BÀI CHẤM TRƯỚC EVENT
+
+2. BẢNG ĐĂNG KÝ KINH DOANH
+ - Nhân viên chụp bảng đăng ký kinh doanh được dán trước cửa Bưu cục
+Cách chụp:- Đảm bảo hình chụp cần thấy được đầy đủ, rõ thông tin trên bảng.
+- Hình chụp nếu thấy được toàn cảnh BẢNG ĐĂNG KÝ KINH DOANH dán đúng quy định thì chỉ cần chụp 1 tấm, nếu hình chụp gần không đủ bao quát thì phải chụp nhiều hình đính kèm vào tiêu chí.
+*** Lưu ý: không thỏa mãn các điều kiện trên, tiêu chí này KHÔNG ĐẠT.
+
+
+C. BÀI CHẤM TRƯỚC EVENT
+
+
+ 3. DÁN MẪU THÔNG BÁO LẮP CAMERA
+Bưu cục in màu hoặc in trắng đen bằng khổ giấy A4 theo mẫu (Link in Mẫu tại đây.) => Dán/ ghim Mẫu Thông Báo Lắp Camera lên Bảng Thông Báo của Bưu Cục.
+Cách chụp:- Tờ thông báo phải được in rõ mực không bị mờ/ lem mực.- Hình chụp phải thấy được nội dung tiêu đề của thông báo.- Tờ thông báo gắn đúng với phần chuyên mục đã quy hoạch theo “Bộ Quy Chuẩn Bảng Thông Báo” ban hành bởi phòng Truyền thông Nội bộ & Thương hiệu Tuyển dụng (gọi tắt là EB)*** Lưu ý: Trường hợp Bưu Cục không có bảng thông báo Bưu Cục dán trực tiếp lên tường tại khu vực tiếp Khách Hàng. 
+
+
+
+A. BÀI CHẤM CẤP QUẢN LÝ VÀ HÀNG NGÀY
+
+6. KHU VỰC CHỨA CCDC, VPP
+
+- Công cụ dụng cụ & nguyên vật liệu hiện tại sẽ chỉ đặt đủ dùng, không tồn quá nhiều để lưu trữ tại BC vì diện tích các BC sẽ tách nhỏ thành nhiều BC và thuê mặt bằng vừa đủ vận hành.
+
+Cách chụp:
++ Đúng:
+- Hình chụp thấy được toàn cảnh khu vực thì chỉ cần chụp 1 tấm (Khoảng cách trung bình 2 mét), nếu hình chụp gần không đủ bao quát thì phải chụp nhiều hình đính kèm vào tiêu chí.
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được toàn bộ KV vận hành thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác, không đồ ăn thức uống, không vật dụng cá nhân và vật dụng thừa.
+
++ Sai:
+- Hình chụp không thấy được toàn cảnh khu vực.
+- Hình ảnh không bao quát được toàn cảnh hoặc khu vực không gọn gàng, vệ sinh.
+
+*** Lưu ý: không thoả các điều kiện trên, tiêu chí này KHÔNG ĐẠT.
+Ví dụ: CCDC vứt lung tung không dọn dẹp, tiêu chí này KHÔNG ĐẠT.
+Link hình ảnh minh hoạ
+
+7. CÔNG CỤ DỤNG CỤ
+
+Bao gồm các loại CCDC cơ bản sau:
+- Máy in.
+- Súng barcode.
+- Rổ/ Sóng nhựa.
+- Cân điện tử/ cân cơ.
+- Khung cố định bao tải.
+- Pallet gỗ/ nhựa (Nếu có).
+- Khung sắt đựng rổ nhựa hoặc xe đẩy (Nếu có).
+
+Cách chụp:
++ Đúng:
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được tất cả các loại CCDC trên.
+- Khu vực đặt CCDC thông thoáng, gọn gàng, sạch sẽ, tình trạng có hoặc không phải ghi chú đầy đủ thông tin và số lượng vào bài chấm.
+
++ Không đạt:
+- Hình chụp không thấy được tất cả các loại CCDC.
+- Hình chụp không thấy được tình trạng, thông tin và số lượng.
+- KV lưu trữ CCDC không sắp xếp gọn gàng, không sạch sẽ.
+
+Link hình ảnh minh hoạ
+
+
+
+1
+2
+3
+4
+A. BÀI CHẤM CẤP QUẢN LÝ VÀ HÀNG NGÀY
+
+9. BẢNG PHÂN TUYẾN
+
+- Loại bảng màu trắng thể hiện các chỉ số vận hành của NV.
+
+Cách chụp:
++ Đúng:
+- Hình chụp thấy được toàn cảnh bảng được treo trên cao ngay ngắn, không hư hỏng. Khu vực phía dưới, xung quanh gọn gàng, sạch sẽ, thông thoáng.
+- Thể hiện các thông tin: tên NV, tuyến đường (phường/ xã), năng suất lượng đơn của NV đó được cập nhật chi tiết hàng ngày.
+-Trường hợp Bưu cục chưa được cấp bảng phân tuyến có thể in các thông số trên giấy A4 và dán trên bảng thông báo.
+
++ Không đạt:
+- Bảng phân tuyến chứa các nội dung cũ, lỗi thời hoặc không cập nhật thông tin.
+- Khu vực treo bảng không gọn gàng, sạch sẽ.
+
+Link hình ảnh minh hoạ
+1
+2
+A. BÀI CHẤM CẤP QUẢN LÝ VÀ HÀNG NGÀY
+
+8. BẢNG THÔNG BÁO
+
+- Loại bảng màu xanh dương tuyên truyền các thông tin tại BC.
+
+Cách chụp:
++ Đúng:
+- Hình chụp thấy được toàn cảnh khu vực bảng được treo trên cao (cạnh trên cách chân tường 1m8), treo ngay ngắn, không hư hỏng.
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được toàn bộ KV treo bảng thông thoáng, sắp xếp gọn gàng, sạch sẽ không rác, không đồ ăn thức uống, không vật dụng cá nhân và vật dụng thừa.
+
++ Không đạt:
+- Thông tin trên bảng thông báo treo không ngay ngắn, dán băng keo đè lên thông tin
+- Thông tin chứa các nội quy/ quy định cũ, lỗi thời
+- Khu vực treo bảng không ngăn nắp, có rác thải.
+
+
+1
+2
+Link hình ảnh minh hoạ
+A. BÀI CHẤM CẤP QUẢN LÝ VÀ HÀNG NGÀY
+
+11. VỆ SINH TRẦN NHÀ
+
+- Đảm bảo trần nhà được vệ sinh sạch sẽ, thông thoáng.
+ 
+Cách chụp: 
++ Đúng:
+- Chụp 2 hình ảnh xoay ngang điện thoại để thấy 4 góc tường nhà:
++ Từ cửa BC chụp 1 hình hướng lên trần nhà góc 45 độ.
++ Từ cuối BC chụp 1 hình hướng lên trần nhà góc 45 độ.
+- Trần nhà sạch sẽ.
+
++ Không đạt:
+- Trần nhà còn bụi bẩn, có nhiều váng nhện.
+- Hình ảnh chụp không thấy được 4 góc tường nhà.
+Link hình ảnh minh hoạ
+
+
+
+
+
+
+1
+2
+3
+4
+A. BÀI CHẤM CẤP QUẢN LÝ VÀ HÀNG NGÀY
+
+10. TỦ HỆ THỐNG CAMERA, CÁP NET
+
+- Đảm bảo hệ thống luôn hoạt động 24/24.
+
+Cách chụp:
++ Đúng:
+- Đảm bảo 1 hoặc nhiều hình chụp phải thấy được toàn bộ KV tủ Camera khóa kín và không có ghim chìa khóa, thông thoáng.
+
++ Không đạt:
+- BC chưa có tủ camera nhưng không không có mail thông báo AM/ GĐV.
+- Tủ Camera ghim chìa khóa hoặc không đóng cửa.
+Link hình ảnh minh hoạ
+
+
+
+
+1
+2
+A. BÀI CHẤM CẤP QUẢN LÝ VÀ HÀNG NGÀY
+
+12. KHU VỰC BÌNH CHỮA CHÁY
+
+-Thiết bị PCCC và Bộ Tiêu lệnh, Nội quy PCCC.
+
+Cách chụp:
++ Đúng:
+- Chụp 1 hoặc nhiều ảnh thấy Khu vực bao gồm thiết bị PCCC và Bộ Tiêu lệnh, Nội quy PCCC.
+- Hình chụp thiết bị PCCC được đặt ở vị trí thông thoáng, không bị khuất tầm nhìn, cản trở, khu vực xung quanh gọn gàng, sạch sẽ.
+
++ Không đạt:
+- Hình chụp không thấy được bao quát khu vực PCCC.
+- Khi vực PCCC có rác thải, đồ ăn thức uống và bị vật dụng khác che lấp, cản trở.
+Link hình ảnh minh hoạ
+
+
+
+
+
+
+1
+2
+A. BÀI CHẤM CẤP QUẢN LÝ VÀ HÀNG NGÀY
+
+13. TÁC PHONG CẤP QUẢN LÝ
+
+Cách chụp: 
++ Đúng: 
+- Chụp 1 hoặc nhiều ảnh thấy rõ mặt và toàn thân CẤP QUẢN LÝ đang hiện diện tại bưu cục.
+- Tuân thủ quy định đồng phục theo quy định.
+
++ Không đạt:
+- Không là hình ảnh của CẤP QUẢN LÝ có mặt tại Bưu cục.
+- CẤP QUẢN LÝ không mang đồng phục, giày theo quy định.
+
+
+
+
+
+
+
+2
+1
+Link hình ảnh minh hoạ
+A. BÀI CHẤM CẤP QUẢN LÝ VÀ HÀNG NGÀY
+
+A. CÁCH THỨC CHẤM ĐIỂM TRÊN HRWS
+
+KHÁI NIỆM
+Cấp quản lý tạo bài chấm bất kì khi đến Bưu cục.
+
+CEO
+GĐV
+AM
+QC
+CHẤM ĐIỂM 
+CHỦ ĐỘNG 
