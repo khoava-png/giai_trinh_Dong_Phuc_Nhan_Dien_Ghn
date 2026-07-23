@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { width: 300px; font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 16px; }
+    h2 { font-size: 15px; margin-bottom: 4px; color: #a855f7; text-align: center; font-weight: 700; }
+    .subtitle { text-align: center; font-size: 11px; color: #64748b; margin-bottom: 12px; }
+    .status { text-align: center; font-size: 12px; color: #94a3b8; margin-bottom: 10px; padding: 6px; background: #1e293b; border-radius: 6px; }
+    .row-input-wrap { display: flex; gap: 6px; margin-bottom: 8px; }
+    .row-input-wrap input { flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #1e293b; color: #e2e8f0; font-size: 14px; outline: none; }
+    .row-input-wrap input:focus { border-color: #a855f7; }
+    .btn { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; white-space: nowrap; }
+    .btn-go { background: linear-gradient(135deg, #7c3aed, #a855f7); color: #fff; }
+    .btn-go:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(124,58,237,0.4); }
+    .btn-go:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+    .log { font-size: 10px; color: #64748b; margin-top: 10px; max-height: 120px; overflow-y: auto; font-family: 'Consolas', monospace; line-height: 1.5; }
+    .log .ok { color: #4ade80; }
+    .log .err { color: #f87171; }
+    .log .warn { color: #fbbf24; }
+    .hint { font-size: 10px; color: #475569; text-align: center; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h2>🤖 EForm Auto Fill</h2>
+  <div class="subtitle">v4 — Gõ dòng → Enter → Tự mở form → Tự fill</div>
+  <div class="status" id="status">Sẵn sàng</div>
+  
+  <div class="row-input-wrap">
+    <input type="number" id="rowInput" placeholder="Số dòng (VD: 12)" min="12">
+    <button class="btn btn-go" id="btnGo">⚡ Điền</button>
+  </div>
+  
+  <div class="log" id="log"></div>
+  <div class="hint">💡 Gõ số dòng → Enter → Tab EForm tự mở và tự điền</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
