@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════
-// content.js — EForm Auto Fill v4.1
-// Anh gõ số dòng → Enter → XONG. Không search, không tương tác.
+// content.js — EForm Auto Fill v5.0.0
+// Bypass GAS — background gọi thẳng Sheets API (1-2s).
+// Fiber debug confirmed OK. Scroll: instant + nearest. Multi-group: 4 phiếu.
 // Select: React fiber set thẳng (tĩnh) hoặc mở dropdown click (động).
 // Text: native setter. KHÔNG submit.
 // ═══════════════════════════════════════════════════════════

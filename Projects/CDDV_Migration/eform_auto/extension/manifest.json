@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "EForm Auto Fill",
-    "version": "4.3.0",
-    "description": "EForm Noibo - GAS 60s+retry + scroll nearest + fiber debug confirmed + multi-group 4 phiếu",
+    "version": "5.0.0",
+    "description": "EForm Noibo — Sheets API direct (1-2s), bypass GAS, 100% tốc độ",
     "permissions": [
         "scripting",
         "activeTab",
@@ -12,12 +12,17 @@
     ],
     "host_permissions": [
         "https://noibo.ghn.vn/*",
+        "https://sheets.googleapis.com/*",
+        "https://oauth2.googleapis.com/*",
         "https://script.google.com/*",
         "https://script.googleusercontent.com/*"
     ],
+    "content_security_policy": {
+        "extension_pages": "script-src 'self'; object-src 'self'; connect-src https://sheets.googleapis.com https://oauth2.googleapis.com https://noibo.ghn.vn https://script.google.com https://script.googleusercontent.com"
+    },
     "action": {
         "default_popup": "popup.html",
-        "default_title": "EForm Auto Fill v4.3.0"
+        "default_title": "EForm Auto Fill v5.0"
     },
     "background": {
         "service_worker": "background.js"
