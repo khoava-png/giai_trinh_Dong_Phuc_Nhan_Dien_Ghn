@@ -82,7 +82,7 @@
     const selector = formItem.querySelector('.ant-select-selector') || formItem.querySelector('.ant-select');
     if (!selector) return false;
 
-    formItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    formItem.scrollIntoView({ behavior: 'instant', block: 'nearest' });
     await wait(80);
     selector.click();
     await wait(250);

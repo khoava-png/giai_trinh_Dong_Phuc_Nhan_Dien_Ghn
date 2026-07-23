@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "EForm Auto Fill",
-    "version": "4.1.0",
-    "description": "Tự động điền EForm Noibo từ Google Sheets - v4: tự mở tab, tự fill, không cần mở form trước",
+    "version": "4.3.0",
+    "description": "EForm Noibo - GAS 60s+retry + scroll nearest + fiber debug confirmed + multi-group 4 phiếu",
     "permissions": [
         "scripting",
         "activeTab",
@@ -17,7 +17,7 @@
     ],
     "action": {
         "default_popup": "popup.html",
-        "default_title": "EForm Auto Fill v4"
+        "default_title": "EForm Auto Fill v4.3.0"
     },
     "background": {
         "service_worker": "background.js"
