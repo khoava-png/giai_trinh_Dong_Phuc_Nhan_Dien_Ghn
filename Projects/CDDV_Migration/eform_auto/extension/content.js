@@ -338,7 +338,7 @@
   // ═══════════════════════════════════════════
 
   async function init() {
-    log('EForm v4.1 loaded');
+    log('EForm v5.0 loaded');
     const key = new URLSearchParams(location.search).get('_ck');
     if (!key) return;
 

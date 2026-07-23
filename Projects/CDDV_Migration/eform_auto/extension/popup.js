@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════════════════════
-// popup.js — EForm Auto Fill v4.1
-// Popup Ở LẠI, hiện tiến trình realtime. Không tự đóng.
+// popup.js — EForm Auto Fill v5.0
+// Bypass GAS — background gọi thẳng Sheets API. Popup Ở LẠI, realtime progress.
 // ═══════════════════════════════════════════════════════════
 
 function log(msg, type = '') {
