@@ -1,0 +1,42 @@
+name: Deploy Dashboard
+
+on:
+  schedule:
+    # 5 lần/ngày trong giờ làm việc (T2 - T6): 6h30, 9h30, 12h30, 15h30, 18h30 giờ VN (UTC+7)
+    # Giờ UTC: 23:30 (hôm trước), 02:30, 05:30, 08:30, 11:30
+    - cron: '30 23,2,5,8,11 * * 1-5'
+  workflow_dispatch: # Cho phép trigger thủ công từ GitHub Actions
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install google-auth google-api-python-client
+
+      - name: Build static dashboard site
+        env:
+          GOOGLE_KEY_JSON: ${{ secrets.GOOGLE_KEY_JSON }}
+          SPREADSHEET_ID: '15Ph9h9pOf5MfvtSaqsPPb0WA0hSdeWtgByY63teiUhg'
+        run: |
+          python scripts/deploy_dashboard.py
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          command: pages deploy _site --project-name=ghn-dashboard --commit-dirty=true

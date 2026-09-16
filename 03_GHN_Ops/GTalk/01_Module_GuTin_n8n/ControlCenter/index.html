@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Center — GHN Operations · Khoa Vũ</title>
+  
+  <!-- Google Fonts: Epilogue, DM Sans & Inter (Full Vietnamese Subset) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Epilogue:wght@800;900&family=Inter:wght@400;500;600;700&display=swap&subset=vietnamese" rel="stylesheet">
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            headline: ['Epilogue', 'sans-serif'],
+            sans: ['"DM Sans"', 'Inter', 'sans-serif'],
+          },
+          colors: {
+            studio: {
+              bg: '#dfe4f2',
+              ink: '#080909',
+              badge: '#f7f8fa',
+              accent: '#FA5A00',
+              lavender: '#C9BCE2'
+            },
+            sand: {
+              50: '#FAF8F5',
+              100: '#F5F0EA',
+              200: '#EBDDCF',
+              300: '#DEC5AD',
+              400: '#C5A880',
+              900: '#1F1813'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- GSAP & Confetti -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    /* Ẩn scrollbar toàn cục */
+    html, body {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'DM Sans', Inter, sans-serif;
+      color: #080909;
+      background: #dfe4f2;
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+
+    .studio-pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 100px;
+      background: rgba(247, 248, 250, 0.92);
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #080909;
+      border: 1px solid rgba(8, 9, 9, 0.12);
+      white-space: nowrap;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+    }
+    .studio-pill:hover {
+      background: #ffffff;
+      transform: translateY(-1px);
+    }
+    .studio-pill.active {
+      background: #080909;
+      color: #ffffff;
+      border-color: #080909;
+    }
+
+    /* Khung điều khiển kính mờ tinh tế */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(8, 9, 9, 0.12);
+      box-shadow: 0 20px 40px rgba(8, 9, 9, 0.08);
+      color: #080909;
+    }
+
+    /* Canvas Nền Nhân Vật Bao Phủ 100% Viewport */
+    #characterCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      background: #dfe4f2;
+    }
+
+    /* Feral-Blob Theme */
+    :root {
+      --jelly-body-main: #C5A880;
+      --jelly-body-mid: #DEC5AD;
+      --jelly-body-light: #F5F0EA;
+      --jelly-outline: #8E6E43;
+      --jelly-blush: rgba(197, 168, 128, 0.45);
+      --jelly-eyes: #080909;
+    }
+    @keyframes blobWobble {
+      0%, 100% { transform: scale(1) translateY(0); }
+      50% { transform: scale(1.02, 0.98) translateY(-2px); }
+    }
+    .blob-idle {
+      animation: blobWobble 4.5s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+  </style>
+</head>
+<body class="bg-black text-white h-full selection:bg-amber-300 selection:text-black">
+
+  <!-- ============================================================ -->
+  <!-- MÀN HÌNH 1: LANDING PAGE 100VH (GIỮ NGUYÊN 100%) -->
+  <!-- VIDEO MÁY BAY HOÀNG HÔN + CHỮ GỬI PHIẾU TỒN / CONTROL CENTER -->
+  <!-- ============================================================ -->
+  <div id="landingScreen" class="relative w-full h-screen overflow-hidden flex flex-col justify-between">
+    
+    <!-- Video Máy Bay ban đầu -->
+    <video 
+      autoplay 
+      loop 
+      muted 
+      playsinline 
+      class="absolute inset-0 w-full h-full object-cover z-0 filter brightness-95"
+    >
+      <source src="https://cdn.sceneai.art/Hero%20Section%20Video/01d1f8de-fec0-4bf5-8b48-9fc2dbc8c6b0.mp4" type="video/mp4">
+    </video>
+
+    <!-- Dark Gradient Overlay -->
+    <div class="absolute inset-0 bg-gradient-to-b from-black/35 via-black/25 to-black/55 z-10 pointer-events-none"></div>
+
+    <!-- Top Navigation Bar -->
+    <header id="navbar" class="relative z-20 w-full px-8 md:px-16 py-8 flex items-center justify-between opacity-0">
+      <div class="flex items-center gap-3">
+        <a href="#" class="font-headline text-2xl font-black tracking-wide text-white">
+          TOUCHPOINT CONTROL
+        </a>
+        <span class="text-xs px-2.5 py-0.5 rounded-full bg-black/40 text-white/80 border border-white/20 font-sans font-normal backdrop-blur-sm">
+          Khoa Vũ
+        </span>
+      </div>
+
+      <!-- Menu Items -->
+      <nav class="hidden md:flex items-center space-x-8">
+        <a href="https://ghn-dashboard.pages.dev/" target="_blank" class="text-[13.5px] font-medium text-amber-300 hover:text-amber-200 flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/30 border border-amber-300/30 backdrop-blur-sm transition duration-200">
+          <span>📊 Data Cào Web</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+        </a>
+        <a href="#scrape" class="text-[14px] font-normal text-white/90 hover:text-white transition duration-200">Cào Dữ Liệu</a>
+        <a href="#template" class="text-[14px] font-normal text-white/90 hover:text-white transition duration-200">Mẫu Tin GTalk</a>
+        <a href="#am" class="text-[14px] font-normal text-white/90 hover:text-white transition duration-200">Báo Cáo AM (160)</a>
+        <a href="#vung" class="text-[14px] font-normal text-white/90 hover:text-white transition duration-200">Trợ Lý Vùng (14)</a>
+        <a href="#sched" class="text-[14px] font-normal text-white/90 hover:text-white transition duration-200">Lịch Tự Động</a>
+      </nav>
+
+      <!-- Nút Đăng Nhập -->
+      <div class="flex items-center gap-4">
+        <button 
+          onclick="openLoginModal()" 
+          class="hidden sm:inline-flex items-center justify-center px-6 py-2.5 text-[14px] font-normal text-white border border-white/80 rounded-none transition-all duration-300 hover:bg-white hover:text-black active:scale-95 uppercase tracking-wider bg-black/20 backdrop-blur-sm"
+        >
+          Đăng Nhập
+        </button>
+
+        <button class="md:hidden text-white hover:text-white/80 focus:outline-none" onclick="openLoginModal()">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Center Hero Content -->
+    <main class="relative z-20 max-w-4xl mx-auto px-6 text-center my-auto flex flex-col items-center">
+      <div id="hero-tag" class="opacity-0 mb-6 inline-flex items-center gap-2 px-5 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-xs text-white/90 font-sans tracking-widest uppercase font-medium">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+        Gửi Phiếu Tồn
+      </div>
+
+      <h1 id="hero-title" class="opacity-0 font-headline text-[48px] md:text-[76px] font-black text-white leading-[1.05] tracking-tight mb-6 drop-shadow-md">
+        Control Center
+      </h1>
+
+      <div id="hero-sub" class="opacity-0 max-w-2xl mx-auto mb-10">
+        <p class="text-[15px] md:text-[18px] text-white/90 font-light leading-relaxed drop-shadow">
+          Hệ thống điều phối cào tự động và gửi báo cáo phân luồng Hối Giao / Lấy / Trả tới 150+ Quản lý Khu vực & 14 Trợ lý Giám đốc Vùng qua GTalk.
+        </p>
+        <div class="mt-3">
+          <a href="https://ghn-dashboard.pages.dev/" target="_blank" class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/50 border border-amber-400/40 text-amber-300 hover:text-amber-200 text-xs font-medium backdrop-blur-md transition shadow-md">
+            <span>Xem Dashboard dữ liệu cào: ghn-dashboard.pages.dev</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </a>
+        </div>
+      </div>
+
+      <div id="hero-cta" class="opacity-0">
+        <button 
+          onclick="openLoginModal()" 
+          class="inline-flex items-center justify-center px-[34px] py-[14px] text-[14px] font-bold text-black bg-white hover:bg-white/90 rounded-none shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 tracking-widest uppercase"
+        >
+          Mở Trạm Điều Khiển
+        </button>
+      </div>
+
+      <!-- 4 Card Số Liệu Vận Hành -->
+      <div id="hero-metrics" class="opacity-0 mt-12 grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-3xl">
+        <div class="bg-black/45 backdrop-blur-md p-4 rounded-none text-left border-t border-t-white/40">
+          <div class="text-xs text-white/70 tracking-widest uppercase font-medium">PHIẾU TỒN</div>
+          <div class="text-2xl font-sans font-bold text-white mt-1">1.917 <span class="text-xs text-white/70 font-normal">phiếu</span></div>
+        </div>
+        <div class="bg-black/45 backdrop-blur-md p-4 rounded-none text-left border-t border-t-white/40">
+          <div class="text-xs text-white/70 tracking-widest uppercase font-medium">BƯU CỤC</div>
+          <div class="text-2xl font-sans font-bold text-white mt-1">286 <span class="text-xs text-white/70 font-normal">kho</span></div>
+        </div>
+        <div class="bg-black/45 backdrop-blur-md p-4 rounded-none text-left border-t border-t-white/40">
+          <div class="text-xs text-white/70 tracking-widest uppercase font-medium">TIỀN PHẠT TRÁNH</div>
+          <div class="text-2xl font-sans font-bold text-white mt-1">211M <span class="text-xs text-white/70 font-normal">VNĐ</span></div>
+        </div>
+        <div class="bg-black/45 backdrop-blur-md p-4 rounded-none text-left border-t border-t-white/40">
+          <div class="text-xs text-white/70 tracking-widest uppercase font-medium">CHỐNG GỬI TRÙNG</div>
+          <div class="text-2xl font-sans font-bold text-emerald-400 mt-1">100% <span class="text-xs text-white/70 font-normal">Lock</span></div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="relative z-20 w-full px-8 md:px-16 py-6 flex items-center justify-between text-xs text-white/60 border-t border-white/10">
+      <div class="tracking-widest uppercase text-xs">Touchpoint Control CX · GHN Operations</div>
+      <div>Bởi <b>Khoa Vũ</b> (khoava@ghn.vn)</div>
+    </footer>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL ĐĂNG NHẬP (MASCOT FERAL-BLOB) -->
+  <!-- ============================================================ -->
+  <div id="loginModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 opacity-0 pointer-events-none transition-opacity duration-300">
+    <div id="modalCard" class="bg-black/85 backdrop-blur-xl w-full max-w-md p-8 rounded-none relative overflow-hidden transform translate-y-6 transition-transform duration-300 border border-white/20">
+      
+      <button onclick="closeLoginModal()" class="absolute top-5 right-5 text-white/50 hover:text-white p-1">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+
+      <div class="flex flex-col items-center mb-6">
+        <div class="relative w-24 h-24 cursor-pointer" onclick="pokeBlob()" title="Chạm nhẹ vào em!">
+          <svg id="mascotSvg" viewBox="0 0 200 200" class="w-full h-full blob-idle">
+            <ellipse cx="100" cy="180" rx="48" ry="8" fill="rgba(0,0,0,0.3)" />
+            <defs>
+              <linearGradient id="blobGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#FFD27D" />
+                <stop offset="50%" stop-color="#FA5A00" />
+                <stop offset="100%" stop-color="#D44700" />
+              </linearGradient>
+            </defs>
+            <path id="blobBody" d="M 45,140 C 30,90 60,40 100,40 C 140,40 170,90 155,140 C 145,170 55,170 45,140 Z" fill="url(#blobGrad)" stroke="#B87C1D" stroke-width="2" />
+            <circle cx="62" cy="115" r="8" fill="rgba(255, 120, 100, 0.4)" />
+            <circle cx="138" cy="115" r="8" fill="rgba(255, 120, 100, 0.4)" />
+            <g id="blobFace">
+              <g id="eyeLeft" transform="translate(75, 100)">
+                <ellipse cx="0" cy="0" rx="8" ry="10" fill="#080909" />
+                <circle id="pupilL" cx="-2" cy="-3" r="3" fill="white" />
+              </g>
+              <g id="eyeRight" transform="translate(125, 100)">
+                <ellipse cx="0" cy="0" rx="8" ry="10" fill="#080909" />
+                <circle id="pupilR" cx="-2" cy="-3" r="3" fill="white" />
+              </g>
+              <path id="blobMouth" d="M 95,118 Q 100,125 105,118" fill="none" stroke="#080909" stroke-width="2.5" stroke-linecap="round" />
+              <g id="blobHands" class="opacity-0 transition-opacity duration-200">
+                <circle cx="75" cy="100" r="13" fill="#FA5A00" stroke="#B87C1D" stroke-width="1.5" />
+                <circle cx="125" cy="100" r="13" fill="#FA5A00" stroke="#B87C1D" stroke-width="1.5" />
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <h3 class="font-headline text-2xl font-bold text-white mt-2">Xác Thực Đăng Nhập</h3>
+        <p id="blobSubtitle" class="text-xs text-white/70 mt-0.5">Control Center · Khoa Vũ</p>
+      </div>
+
+      <form onsubmit="handleDemoLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-normal text-white/80 mb-1">Tài khoản quản trị</label>
+          <input 
+            type="text" 
+            id="usernameInput"
+            value="admin"
+            onfocus="setBlobMood('curious')"
+            onblur="setBlobMood('neutral')"
+            class="w-full px-4 py-2.5 bg-black/50 border border-white/20 text-white rounded-none text-sm transition focus:border-amber-400 focus:outline-none" 
+            required
+          >
+        </div>
+
+        <div>
+          <label class="block text-xs font-normal text-white/80 mb-1">Mật khẩu</label>
+          <input 
+            type="password" 
+            id="passwordInput"
+            value="ghn@2024"
+            onfocus="setBlobMood('password')"
+            onblur="setBlobMood('neutral')"
+            class="w-full px-4 py-2.5 bg-black/50 border border-white/20 text-white rounded-none text-sm transition focus:border-amber-400 focus:outline-none" 
+            required
+          >
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-white/70 pt-1">
+          <label class="flex items-center gap-2 cursor-pointer hover:text-white">
+            <input type="checkbox" checked class="rounded-none bg-black/40 border-white/30 text-amber-400">
+            <span>Ghi nhớ phiên đăng nhập</span>
+          </label>
+          <span class="text-amber-300 hover:underline cursor-pointer" onclick="alert('Pass mặc định: admin / ghn@2024')">Quên pass?</span>
+        </div>
+
+        <button 
+          type="submit" 
+          id="loginBtn"
+          class="w-full py-3 px-4 mt-2 bg-white hover:bg-white/90 text-black font-bold text-xs rounded-none shadow-md transition duration-200 tracking-widest uppercase"
+        >
+          <span>Vào Buồng Lái Điều Khiển</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MÀN HÌNH 2: DASHBOARD OVERLAY CHUẨN STUDIO CHUYÊN NGHIỆP -->
+  <!-- NHÂN VẬT LAVENDER 3D ÔM TRÁI TIM PHỦ TOÀN BỘ 100% BACKGROUND -->
+  <!-- SỬ DỤNG CANVAS FRAME SEQUENCE ENGINE SIÊU MƯỢT TRÊN MỌI TRÌNH DUYỆT -->
+  <!-- ============================================================ -->
+  <div id="demoDashboard" class="fixed inset-0 z-40 overflow-hidden hidden" style="background: transparent;">
+    
+    <!-- CANVAS RENDER NHÂN VẬT LAVENDER 3D THỜI GIAN THỰC (UNIVERSAL CANVAS ENGINE) -->
+    <canvas id="characterCanvas"></canvas>
+
+    <!-- GIAO DIỆN NỔI THANH THOÁT -->
+    <div class="relative z-10 w-full h-full flex flex-col justify-between p-6 md:p-8 pointer-events-none">
+      
+      <!-- TOP BAR TINH GỌN -->
+      <header class="w-full max-w-6xl mx-auto flex items-center justify-between pointer-events-auto">
+        <div class="flex items-center gap-3">
+          <span class="studio-pill font-headline font-black text-sm tracking-tight">
+            TOUCHPOINT CONTROL CENTER
+          </span>
+          <span class="studio-pill text-xs font-normal">
+            Khoa Vũ (3049378)
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <a href="https://ghn-dashboard.pages.dev/" target="_blank" class="studio-pill gap-1.5 text-xs">
+            <span>📊 Data Cào Web</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+          </a>
+          <span class="studio-pill text-xs bg-emerald-50 text-emerald-900 border-emerald-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mr-1.5"></span> Online (Render)
+          </span>
+          <button onclick="closeDashboard()" class="studio-pill text-xs bg-studio-ink text-white hover:bg-black">
+            Đăng Xuất
+          </button>
+        </div>
+      </header>
+
+      <!-- KHU VỰC TRUNG TÂM HOÀN TOÀN TRỐNG ĐỂ TÔN VINH NHÂN VẬT LAVENDER 3D VÀ ĐÔI MẮT LIẾC THEO CHUỘT -->
+      <main class="my-auto text-center pointer-events-none"></main>
+
+      <!-- KHUNG PANEL NỔI 5 TAB NGHIỆP VỤ GHN (HIỂN THỊ KHI CLICK CHỌN TAB) -->
+      <div class="w-full max-w-5xl mx-auto flex flex-col items-center pointer-events-auto">
+        
+        <!-- Bảng Chi Tiết Từng Tab (Ẩn / Hiện mượt mà) -->
+        <div id="tabPanelContainer" class="w-full glass-panel rounded-2xl p-5 mb-4 shadow-2xl transition-all duration-300 hidden">
+          
+          <!-- Nút Đóng Panel -->
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-studio-ink/10">
+            <div id="panelTitle" class="font-headline font-black text-sm text-studio-ink uppercase tracking-wider flex items-center gap-2">
+              <span>⚡ Điều Khiển Tác Vụ</span>
+            </div>
+            <button onclick="hideTabPanel()" class="text-studio-ink/60 hover:text-studio-ink p-1 rounded-full hover:bg-black/5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+
+          <!-- TAB 1: CÀO DỮ LIỆU -->
+          <div id="panel-tab-scrape" class="panel-tab-pane space-y-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div class="bg-white/80 p-3 rounded-xl border border-studio-ink/10 text-left">
+                <div class="text-[11px] text-studio-ink/60 font-semibold uppercase">BƯU CỤC</div>
+                <div class="text-xl font-headline font-bold text-studio-ink mt-0.5">286 kho</div>
+              </div>
+              <div class="bg-white/80 p-3 rounded-xl border border-studio-ink/10 text-left">
+                <div class="text-[11px] text-studio-ink/60 font-semibold uppercase">PHIẾU TỒN</div>
+                <div class="text-xl font-headline font-bold text-studio-ink mt-0.5">1.917 phiếu</div>
+              </div>
+              <div class="bg-white/80 p-3 rounded-xl border border-studio-ink/10 text-left">
+                <div class="text-[11px] text-studio-ink/60 font-semibold uppercase">TIỀN PHẠT</div>
+                <div class="text-xl font-headline font-bold text-rose-600 mt-0.5">211M VNĐ</div>
+              </div>
+              <div class="bg-white/80 p-3 rounded-xl border border-studio-ink/10 text-left">
+                <div class="text-[11px] text-studio-ink/60 font-semibold uppercase">KHÓA TRÙNG</div>
+                <div class="text-xl font-headline font-bold text-emerald-700 mt-0.5">100% Lock</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 pt-1">
+              <button onclick="alert('⚡ Bắt đầu chạy liên hoàn: Cào Web → Ghi Sheets → Gửi GTalk!')" class="px-5 py-2.5 bg-studio-accent text-white font-bold text-xs rounded-xl shadow hover:opacity-90 transition">
+                ⚡ Chạy Liên Hoàn Auto-Pipeline
+              </button>
+              <button onclick="alert('⟳ Đang cào dữ liệu và ghi Google Sheet...')" class="px-4 py-2.5 bg-white text-studio-ink font-semibold text-xs rounded-xl border border-studio-ink/20 shadow-sm hover:bg-studio-badge transition">
+                ⟳ Cào + Ghi Sheet
+              </button>
+            </div>
+          </div>
+
+          <!-- TAB 2: MẪU TIN GTALK -->
+          <div id="panel-tab-tpl" class="panel-tab-pane hidden space-y-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-studio-ink mb-1">Mẫu tin gửi AM ({ten_am}, {ngay_gio}, {bcs}):</label>
+                <textarea class="w-full h-24 p-2.5 text-xs font-mono border border-studio-ink/20 rounded-xl bg-white focus:outline-none" id="tplAm">CẦN XỬ LÝ PHIẾU HỐI GIAO / LẤY / TRẢ
+Hi Anh/ Chị {ten_am}, tính tới thời điểm {ngay_gio}
+{bcs}
+Chi tiết: https://g.ghn.studio/PhieuKhachHang</textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-studio-ink mb-1">Mẫu tin gửi Trợ lý Vùng ({vung}, {ngay_gio}, {bcs}):</label>
+                <textarea class="w-full h-24 p-2.5 text-xs font-mono border border-studio-ink/20 rounded-xl bg-white focus:outline-none" id="tplVung">CẦN XỬ LÝ PHIẾU HỐI GIAO / LẤY / TRẢ
+Hi Anh/Chị Trợ Lý/ HRBP vùng {vung}, tính tới thời điểm {ngay_gio}
+{bcs}
+Chi tiết: https://g.ghn.studio/PhieuKhachHang</textarea>
+              </div>
+            </div>
+            <button onclick="alert('Đã lưu mẫu tin!')" class="px-4 py-2 bg-studio-ink text-white font-bold text-xs rounded-xl shadow">
+              💾 Lưu Mẫu Tin
+            </button>
+          </div>
+
+          <!-- TAB 3: GỬI AM (160 NGƯỜI) -->
+          <div id="panel-tab-am" class="panel-tab-pane hidden space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-studio-ink">Phân luồng:</span>
+                <select class="px-3 py-1.5 bg-white border border-studio-ink/20 rounded-lg text-xs font-medium focus:outline-none">
+                  <option>📋 Tất cả (Giao + Lấy + Trả)</option>
+                  <option>🚚 Chỉ Hối Giao</option>
+                  <option>📥 Chỉ Hối Lấy</option>
+                  <option>🔄 Chỉ Hối Trả</option>
+                </select>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="alert('Xem trước 160 AM')" class="px-3 py-1.5 bg-white text-studio-ink font-medium text-xs rounded-lg border border-studio-ink/20 shadow-sm">
+                  👁 Xem trước
+                </button>
+                <button onclick="alert('Bắt đầu gửi 160 AM!')" class="px-3 py-1.5 bg-studio-accent text-white font-bold text-xs rounded-lg shadow">
+                  📤 Gửi 160 AM
+                </button>
+              </div>
+            </div>
+            <div class="overflow-x-auto max-h-36 border border-studio-ink/10 rounded-xl bg-white">
+              <table class="w-full text-xs text-left">
+                <thead class="bg-studio-badge text-studio-ink font-bold uppercase text-[10px] sticky top-0">
+                  <tr>
+                    <th class="p-2 w-8"><input type="checkbox" checked></th>
+                    <th class="p-2">Mã NV</th>
+                    <th class="p-2">Tên Quản Lý AM</th>
+                    <th class="p-2">Tổng Phiếu</th>
+                    <th class="p-2">Cần Gấp</th>
+                    <th class="p-2">Phạt</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-studio-ink/10">
+                  <tr>
+                    <td class="p-2"><input type="checkbox" checked></td>
+                    <td class="p-2 font-mono font-bold">3088630</td>
+                    <td class="p-2 font-medium">Trần Văn Phước</td>
+                    <td class="p-2 font-bold text-amber-600">12</td>
+                    <td class="p-2 text-rose-600 font-bold">8</td>
+                    <td class="p-2 text-rose-600 font-bold">4</td>
+                  </tr>
+                  <tr>
+                    <td class="p-2"><input type="checkbox" checked></td>
+                    <td class="p-2 font-mono font-bold">3044049</td>
+                    <td class="p-2 font-medium">Lê Đắc Vinh</td>
+                    <td class="p-2 font-bold text-amber-600">24</td>
+                    <td class="p-2 text-rose-600 font-bold">15</td>
+                    <td class="p-2 text-rose-600 font-bold">9</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 4: GỬI TRỢ LÝ VÙNG (14 VÙNG) -->
+          <div id="panel-tab-vung" class="panel-tab-pane hidden space-y-3">
+            <h4 class="text-xs font-bold text-studio-ink">Báo Cáo 14 Vùng GHN & Mã NV Trợ Lý:</h4>
+            <textarea class="w-full h-20 p-2.5 text-xs font-mono border border-studio-ink/20 rounded-xl bg-white focus:outline-none">NTB = 3049378
+DSH = 3088630
+XBG = 3044049
+DNB = 3026736
+HCM = 3004181</textarea>
+            <div class="flex gap-2">
+              <button onclick="alert('Đã lưu mã NV Trợ lý!')" class="px-4 py-2 bg-studio-ink text-white font-bold text-xs rounded-xl">
+                💾 Lưu ID Trợ Lý
+              </button>
+              <button onclick="alert('Bắt đầu gửi 14 Vùng!')" class="px-4 py-2 bg-studio-accent text-white font-bold text-xs rounded-xl shadow">
+                📤 Gửi 14 Vùng
+              </button>
+            </div>
+          </div>
+
+          <!-- TAB 5: LỊCH TỰ ĐỘNG & LOG -->
+          <div id="panel-tab-sched" class="panel-tab-pane hidden space-y-3">
+            <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-900 font-medium">
+              🔒 <b>Idempotency Lock Active:</b> Khóa tự động ghi nhận khung giờ đã gửi, tuyệt đối không gửi trùng khi Render restart.
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div class="p-3 bg-white rounded-xl border border-studio-ink/10">
+                <b>📋 Luồng Toàn Bộ:</b> 9, 10, 11, 12, 13h
+              </div>
+              <div class="p-3 bg-white rounded-xl border border-studio-ink/10">
+                <b class="text-amber-700">⚡ Luồng Ưu Tiên:</b> 14, 15, 16h
+              </div>
+            </div>
+            <button onclick="alert('Đã lưu cấu hình lịch!')" class="px-4 py-2 bg-studio-ink text-white font-bold text-xs rounded-xl">
+              💾 Lưu Cấu Hình Lịch
+            </button>
+          </div>
+
+        </div>
+
+        <!-- THANH FLOATING DOCK 5 TAB CHÍNH (ĐẶT Ở ĐÁY MÀN HÌNH) -->
+        <nav class="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 shadow-xl border border-studio-ink/15">
+          <button onclick="openTabPanel('panel-tab-scrape', '⚡ Cào Dữ Liệu & Auto-Pipeline')" class="dock-btn studio-pill text-xs font-bold" data-tab="panel-tab-scrape">
+            ① Cào Dữ Liệu
+          </button>
+          <button onclick="openTabPanel('panel-tab-tpl', '📝 Mẫu Tin Báo Cáo GTalk')" class="dock-btn studio-pill text-xs font-semibold" data-tab="panel-tab-tpl">
+            ② Mẫu Tin
+          </button>
+          <button onclick="openTabPanel('panel-tab-am', '👥 Gửi Quản Lý Khu Vực AM (160)')" class="dock-btn studio-pill text-xs font-semibold" data-tab="panel-tab-am">
+            ③ Gửi AM (160)
+          </button>
+          <button onclick="openTabPanel('panel-tab-vung', '🏢 Gửi Trợ Lý Giám Đốc Vùng (14)')" class="dock-btn studio-pill text-xs font-semibold" data-tab="panel-tab-vung">
+            ④ Trợ Lý Vùng
+          </button>
+          <button onclick="openTabPanel('panel-tab-sched', '⏰ Lịch Tự Động & Idempotency Lock')" class="dock-btn studio-pill text-xs font-semibold" data-tab="panel-tab-sched">
+            ⑤ Lịch & Log
+          </button>
+        </nav>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- JAVASCRIPT: GSAP, MASCOT & UNIVERSAL CANVAS EYE-SCRUBBING -->
+  <!-- ============================================================ -->
+  <script>
+    // GSAP Page Load Animation cho Landing
+    document.addEventListener("DOMContentLoaded", () => {
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+      tl.to("#navbar", { opacity: 1, y: 0, duration: 0.8, delay: 0.2 })
+        .to("#hero-tag", { opacity: 1, y: 0, duration: 0.6 }, "-=0.4")
+        .to("#hero-title", { opacity: 1, y: 0, duration: 0.8 }, "-=0.4")
+        .to("#hero-sub", { opacity: 1, y: 0, duration: 0.8 }, "-=0.5")
+        .to("#hero-cta", { opacity: 1, y: 0, duration: 0.8 }, "-=0.5")
+        .to("#hero-metrics", { opacity: 1, y: 0, duration: 0.8 }, "-=0.4");
+    });
+
+    // Feral-Blob Mascot Controller
+    function setBlobMood(mood) {
+      const mouth = document.getElementById('blobMouth');
+      const pupilL = document.getElementById('pupilL');
+      const pupilR = document.getElementById('pupilR');
+      const hands = document.getElementById('blobHands');
+      const subtitle = document.getElementById('blobSubtitle');
+
+      if (mood === 'password') {
+        hands.classList.remove('opacity-0');
+        subtitle.textContent = "Em che mắt lại rồi, anh cứ yên tâm nhập nhé!";
+        mouth.setAttribute('d', 'M 95,122 Q 100,122 105,122');
+      } else if (mood === 'curious') {
+        hands.classList.add('opacity-0');
+        pupilL.setAttribute('cx', '0');
+        pupilL.setAttribute('cy', '3');
+        pupilR.setAttribute('cx', '0');
+        pupilR.setAttribute('cy', '3');
+        subtitle.textContent = "Chào anh Khoa! Đang nhập tài khoản...";
+        mouth.setAttribute('d', 'M 94,118 Q 100,128 106,118');
+      } else if (mood === 'happy') {
+        hands.classList.add('opacity-0');
+        mouth.setAttribute('d', 'M 90,116 Q 100,132 110,116');
+        subtitle.textContent = "✔ Xác thực thành công!";
+      } else {
+        hands.classList.add('opacity-0');
+        pupilL.setAttribute('cx', '-2');
+        pupilL.setAttribute('cy', '-3');
+        pupilR.setAttribute('cx', '-2');
+        pupilR.setAttribute('cy', '-3');
+        mouth.setAttribute('d', 'M 95,118 Q 100,125 105,118');
+        subtitle.textContent = "Xác thực quyền quản trị hệ thống";
+      }
+    }
+
+    function pokeBlob() {
+      gsap.fromTo("#mascotSvg", 
+        { scale: 0.88, y: 6 }, 
+        { scale: 1, y: 0, duration: 0.5, ease: "elastic.out(1.2, 0.4)" }
+      );
+      setBlobMood('curious');
+      setTimeout(() => setBlobMood('neutral'), 1200);
+    }
+
+    function openLoginModal() {
+      const modal = document.getElementById('loginModal');
+      const card = document.getElementById('modalCard');
+      modal.classList.remove('pointer-events-none', 'opacity-0');
+      card.classList.remove('translate-y-6');
+      card.classList.add('translate-y-0');
+    }
+
+    function closeLoginModal() {
+      const modal = document.getElementById('loginModal');
+      const card = document.getElementById('modalCard');
+      modal.classList.add('opacity-0', 'pointer-events-none');
+      card.classList.add('translate-y-6');
+      card.classList.remove('translate-y-0');
+      setBlobMood('neutral');
+    }
+
+    // ============================================================
+    // UNIVERSAL CANVAS FRAME-SEQUENCE EYE-SCRUBBING ENGINE
+    // HOẠT ĐỘNG 100% TRÊN MỌI MÁY / TRÌNH DUYỆT / KHÔNG CẦN CODEC VIDEO
+    // ============================================================
+    const gazeFrames = [
+      [0.037186, 2.54167], [0.130722, 2.58333], [0.234912, 2.625], [0.321399, 2.66667],
+      [0.419378, 2.70833], [0.493296, 2.75], [0.597784, 2.79167], [0.763067, 2.83333],
+      [0.778708, 2.875], [0.878749, 2.91667], [0.993308, 2.95833], [1.262791, 3.0],
+      [1.388902, 3.04167], [1.466609, 0.25], [1.473318, 0.29167], [1.520011, 3.08333],
+      [1.53824, 0.33333], [1.6056, 0.375], [1.640696, 3.125], [1.691747, 0.41667],
+      [1.779194, 0.45833], [1.869867, 0.5], [1.984485, 0.54167], [2.07265, 0.58333],
+      [2.183915, 0.625], [2.267155, 0.66667], [2.36138, 0.70833], [2.44749, 0.75],
+      [2.517676, 0.79167], [2.605329, 0.83333], [2.670889, 0.875], [2.809991, 0.91667],
+      [2.918365, 0.95833], [3.134177, 1.0], [3.240289, 1.04167], [3.35949, 1.08333],
+      [3.464119, 1.125], [3.549317, 1.16667], [3.663539, 1.20833], [3.78152, 1.25],
+      [3.878742, 1.29167], [3.989446, 1.33333], [4.066996, 1.375], [4.225574, 1.45833],
+      [4.260255, 1.41667], [4.276468, 1.5], [4.404025, 1.54167], [4.487075, 1.58333],
+      [4.552949, 1.625], [4.628837, 1.66667], [4.701131, 1.70833], [4.773675, 1.75],
+      [4.833089, 1.79167], [4.894145, 1.83333], [4.962593, 1.875], [5.028737, 1.91667],
+      [5.090028, 1.95833], [5.212041, 2.0], [5.28302, 2.04167], [5.349352, 2.08333],
+      [5.412121, 2.125], [5.473636, 2.16667], [5.573871, 2.20833], [5.656364, 2.25],
+      [5.759153, 2.29167], [5.85261, 2.33333], [5.938647, 2.375], [6.048453, 2.41667],
+      [6.153327, 2.45833], [6.222603, 2.5]
+    ];
+
+    const TAU = Math.PI * 2;
+    const wrappedAngle = (angle) => (angle % TAU + TAU) % TAU;
+
+    function timeForAngle(angle) {
+      const target = wrappedAngle(angle);
+      let nearestTime = gazeFrames[0][1];
+      let nearestDistance = Infinity;
+      for (const [sampleAngle, time] of gazeFrames) {
+        const difference = Math.abs(target - sampleAngle);
+        const distance = Math.min(difference, TAU - difference);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestTime = time;
+        }
+      }
+      return nearestTime;
+    }
+
+    // Preload toàn bộ 169 frames vào RAM
+    const TOTAL_FRAMES = 169;
+    const frameImages = [];
+    let initialFrameLoaded = false;
+
+    function preloadFrames() {
+      for (let i = 0; i < TOTAL_FRAMES; i++) {
+        const img = new Image();
+        const numStr = String(i).padStart(3, '0');
+        img.src = `assets/frames/f_${numStr}.jpg`;
+        if (i === 60) {
+          img.onload = () => {
+            initialFrameLoaded = true;
+            drawFrame(60);
+          };
+        }
+        frameImages.push(img);
+      }
+    }
+    preloadFrames();
+
+    const canvas = document.getElementById('characterCanvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+    let currentDrawnFrame = -1;
+
+    function resizeCanvas() {
+      if (!canvas) return;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      if (currentDrawnFrame >= 0) drawFrame(currentDrawnFrame);
+      else drawFrame(60);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    function drawFrame(frameIdx) {
+      if (!ctx || !canvas) return;
+      frameIdx = Math.max(0, Math.min(TOTAL_FRAMES - 1, frameIdx));
+      const img = frameImages[frameIdx];
+      if (!img || !img.complete || img.naturalWidth === 0) return;
+
+      currentDrawnFrame = frameIdx;
+      
+      // Vẽ ảnh fit cover 100% màn hình
+      const cw = canvas.width;
+      const ch = canvas.height;
+      const iw = img.naturalWidth;
+      const ih = img.naturalHeight;
+
+      const scale = Math.max(cw / iw, ch / ih);
+      const nw = iw * scale;
+      const nh = ih * scale;
+      const ox = (cw - nw) / 2;
+      const oy = (ch - nh) / 2;
+
+      ctx.drawImage(img, ox, oy, nw, nh);
+    }
+
+    let eyeScrubInitialized = false;
+    function initCanvasEyeTracking() {
+      resizeCanvas();
+      drawFrame(60);
+
+      if (eyeScrubInitialized) return;
+      eyeScrubInitialized = true;
+
+      window.addEventListener('pointermove', (e) => {
+        const cw = window.innerWidth;
+        const ch = window.innerHeight;
+        
+        // Tọa độ mắt nhân vật trung tâm
+        const eyeX = cw / 2;
+        const eyeY = ch * 0.42;
+
+        const dx = e.clientX - eyeX;
+        const dy = e.clientY - eyeY;
+
+        if (Math.hypot(dx, dy) > 10) {
+          const angle = Math.atan2(dy, dx);
+          const desiredTime = timeForAngle(angle);
+          const frameIndex = Math.round(desiredTime * 24);
+          drawFrame(frameIndex);
+        }
+      }, { passive: true });
+    }
+
+    function handleDemoLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+
+      btn.disabled = true;
+      btn.innerHTML = `<span>Đang vào buồng lái...</span>`;
+
+      setTimeout(() => {
+        setBlobMood('happy');
+        confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
+
+        setTimeout(() => {
+          closeLoginModal();
+          document.getElementById('demoDashboard').classList.remove('hidden');
+          initCanvasEyeTracking();
+          btn.disabled = false;
+          btn.innerHTML = 'Vào Buồng Lái Điều Khiển';
+        }, 700);
+      }, 500);
+    }
+
+    function closeDashboard() {
+      document.getElementById('demoDashboard').classList.add('hidden');
+      hideTabPanel();
+    }
+
+    // ============================================================
+    // PANEL DOCK CONTROLLER
+    // ============================================================
+    function openTabPanel(tabPaneId, titleText) {
+      const container = document.getElementById('tabPanelContainer');
+      const title = document.getElementById('panelTitle');
+      
+      // Nếu tab đang active được bấm lại -> đóng panel
+      const currentActiveBtn = document.querySelector(`.dock-btn[data-tab="${tabPaneId}"].active`);
+      if (currentActiveBtn && !container.classList.contains('hidden')) {
+        hideTabPanel();
+        return;
+      }
+
+      // Cập nhật tiêu đề
+      title.innerHTML = `<span>${titleText}</span>`;
+
+      // Ẩn các pane khác, hiện pane được chọn
+      document.querySelectorAll('.panel-tab-pane').forEach(el => el.classList.add('hidden'));
+      const targetPane = document.getElementById(tabPaneId);
+      if (targetPane) targetPane.classList.remove('hidden');
+
+      // Highlight dock button
+      document.querySelectorAll('.dock-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.querySelector(`.dock-btn[data-tab="${tabPaneId}"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      // Hiện container panel
+      container.classList.remove('hidden');
+      gsap.fromTo(container, 
+        { opacity: 0, y: 20 }, 
+        { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }
+      );
+    }
+
+    function hideTabPanel() {
+      const container = document.getElementById('tabPanelContainer');
+      container.classList.add('hidden');
+      document.querySelectorAll('.dock-btn').forEach(btn => btn.classList.remove('active'));
+    }
+  </script>
+</body>
+</html>

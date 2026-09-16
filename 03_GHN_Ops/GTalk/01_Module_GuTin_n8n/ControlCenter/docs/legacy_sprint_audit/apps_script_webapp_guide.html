@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHN Control Center - Apps Script Web App UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-red-600 text-white p-2 rounded-lg font-bold">
+                <i class="fa-solid fa-bolt"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-bold">GHN Control Center <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded ml-2 border border-emerald-500/30">Google Apps Script Web App</span></h1>
+                <p class="text-xs text-slate-400">Hosting trực tiếp từ Google Sheet (Sheets-Centric Architecture)</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="https://docs.google.com/spreadsheets/d/15Ph9h9pOf5MfvtSaqsPPb0WA0hSdeWtgByY63teiUhg/edit" target="_blank" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-700 flex items-center space-x-1.5">
+                <i class="fa-solid fa-file-excel text-emerald-400"></i>
+                <span>Mở Google Sheet DB</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 p-6 max-w-6xl mx-auto w-full space-y-6">
+        
+        <!-- Status Banner -->
+        <div class="bg-gradient-to-r from-red-900/40 to-slate-900 border border-red-500/30 p-6 rounded-2xl flex items-center justify-between">
+            <div>
+                <h2 class="text-lg font-bold text-white">Kiến trúc Web App chạy trên Google Apps Script</h2>
+                <p class="text-xs text-slate-300 mt-1">Toàn bộ giao diện này được serve trực tiếp qua hàm ` doGet(e)` từ Google Sheet. Không cần dựng Server Python phức tạp bên ngoài!</p>
+            </div>
+            <button onclick="alert('Đã đồng bộ thành công với Google Sheet!')" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-lg transition flex items-center space-x-2">
+                <i class="fa-solid fa-rotate"></i>
+                <span>Làm mới dữ liệu</span>
+            </button>
+        </div>
+
+        <!-- Code Snippet Box for Google Apps Script Code.gs -->
+        <div class="bg-slate-900 rounded-xl border border-slate-800 p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-slate-200 flex items-center">
+                    <i class="fa-solid fa-code text-red-500 mr-2"></i> Mã nguồn Apps Script (`Code.gs`) để deploy Web App lên Google Sheet
+                </h3>
+                <span class="text-xs bg-slate-800 text-slate-400 px-2 py-1 rounded">Apps Script v3.0</span>
+            </div>
+            
+            <div class="bg-slate-950 p-4 rounded-lg border border-slate-800 text-xs font-mono text-emerald-400 overflow-x-auto">
+<pre><code>function doGet(e) {
+  var htmlOutput = HtmlService.createHtmlOutputFromFile('Index');
+  htmlOutput.setTitle('GHN Control Center');
+  htmlOutput.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  return htmlOutput;
+}
+
+function getDashboardData() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("04_RP_SUMMARY");
+  var data = sheet.getDataRange().getValues();
+  return data;
+}</code></pre>
+            </div>
+            <p class="text-xs text-slate-400">Cách đưa lên Google Sheet: Vào Google Sheet của bạn &rarr; <strong>Extensions (Tiện ích mở rộng)</strong> &rarr; <strong>Apps Script</strong> &rarr; Dán mã trên vào `Code.gs`, tạo file `Index.html` chứa mã giao diện &rarr; Bấm <strong>Deploy &gt; New deployment &gt; Web app</strong>.</p>
+        </div>
+
+    </main>
+</body>
+</html>

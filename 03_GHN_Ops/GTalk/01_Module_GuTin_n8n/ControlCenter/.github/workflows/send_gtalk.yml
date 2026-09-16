@@ -1,0 +1,37 @@
+name: Send GTalk Messages
+
+on:
+  schedule:
+    # Chạy vào phút 20 mỗi giờ từ 6h20 đến 18h20 giờ VN (UTC+7), Thứ 2 đến Thứ 6
+    # Giờ UTC tương ứng: 23:20 (hôm trước), 00:20, 01:20, ..., 11:20
+    - cron: '20 23,0,1,2,3,4,5,6,7,8,9,10,11 * * 1-5'
+  workflow_dispatch: # Cho phép trigger thủ công từ giao diện GitHub Actions
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install google-auth google-api-python-client requests
+
+      - name: Run send_from_queue script
+        env:
+          GTALK_OA_TOKEN: ${{ secrets.GTALK_OA_TOKEN }}
+          GOOGLE_KEY_JSON: ${{ secrets.GOOGLE_KEY_JSON }}
+          SPREADSHEET_ID: '15Ph9h9pOf5MfvtSaqsPPb0WA0hSdeWtgByY63teiUhg'
+          ADMIN_GTALK_ID: '3049378'
+        run: |
+          python scripts/send_from_queue.py

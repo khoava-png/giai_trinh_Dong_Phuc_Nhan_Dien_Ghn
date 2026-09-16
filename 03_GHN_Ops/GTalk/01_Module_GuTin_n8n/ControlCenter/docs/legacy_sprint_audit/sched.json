@@ -1,0 +1,335 @@
+{
+ "enabled": true,
+ "dry_run": false,
+ "delay_min": 5,
+ "send_am": true,
+ "hours_am_all": [
+  9,
+  10,
+  11,
+  12,
+  13
+ ],
+ "hours_am_cd": [
+  14,
+  15,
+  16
+ ],
+ "am_cd_loai": "HOI_LAY",
+ "last_run_am": "11/09/2026 09:00:07",
+ "send_vung": true,
+ "hours_vung_all": [
+  9,
+  10,
+  11,
+  12,
+  13
+ ],
+ "hours_vung_cd": [
+  14,
+  15,
+  16
+ ],
+ "vung_cd_loai": "HOI_LAY",
+ "last_run_vung": "11/09/2026 09:00:07",
+ "allowed_weekdays": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "history": [
+  {
+   "time": "07/09/2026 11:00:23",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "[]"
+  },
+  {
+   "time": "07/09/2026 12:00:13",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "[{'target': 'AM (ALL)', 'sent': 130, 'failed': 0}, {'target': 'Trợ lý Vùng (ALL)', 'sent': 14}]"
+  },
+  {
+   "time": "07/09/2026 13:00:00",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "[{'target': 'AM (ALL)', 'sent': 133, 'failed': 0}, {'target': 'Trợ lý Vùng (ALL)', 'sent': 14}]"
+  },
+  {
+   "time": "07/09/2026 14:00:12",
+   "am_flow": "HOI_LAY",
+   "vung_flow": "HOI_LAY",
+   "dry": false,
+   "result": "[{'target': 'AM (HOI_LAY)', 'sent': 57, 'failed': 0}, {'target': 'Trợ lý Vùng (HOI_LAY)', 'sent': 11}]"
+  },
+  {
+   "time": "07/09/2026 15:00:10",
+   "am_flow": "HOI_LAY",
+   "vung_flow": "HOI_LAY",
+   "dry": false,
+   "result": "[{'target': 'AM (HOI_LAY)', 'sent': 57, 'failed': 0}, {'target': 'Trợ lý Vùng (HOI_LAY)', 'sent': 11}]"
+  },
+  {
+   "time": "07/09/2026 16:00:19",
+   "am_flow": "HOI_LAY",
+   "vung_flow": "HOI_LAY",
+   "dry": false,
+   "result": "[{'target': 'AM (HOI_LAY)', 'sent': 51, 'failed': 0}, {'target': 'Trợ lý Vùng (HOI_LAY)', 'sent': 10}]"
+  },
+  {
+   "time": "08/09/2026 09:00:27",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "[{'target': 'AM (ALL)', 'sent': 182, 'failed': 0}, {'target': 'Trợ lý Vùng (ALL)', 'sent': 14}]"
+  },
+  {
+   "time": "08/09/2026 10:00:08",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "[{'target': 'AM (ALL)', 'sent': 161, 'failed': 0}, {'target': 'Trợ lý Vùng (ALL)', 'sent': 14}]"
+  },
+  {
+   "time": "08/09/2026 11:00:19",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "[{'target': 'AM (ALL)', 'sent': 145, 'failed': 0}, {'target': 'Trợ lý Vùng (ALL)', 'sent': 14}]"
+  },
+  {
+   "time": "08/09/2026 12:14:37",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "[{'target': 'AM (ALL)', 'sent': 143, 'failed': 0}, {'target': 'Trợ lý Vùng (ALL)', 'sent': 14}]"
+  },
+  {
+   "time": "08/09/2026 13:00:08",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "[{'target': 'AM (ALL)', 'sent': 146, 'failed': 0}, {'target': 'Trợ lý Vùng (ALL)', 'sent': 14}]"
+  },
+  {
+   "time": "08/09/2026 14:00:06",
+   "am_flow": "HOI_LAY",
+   "vung_flow": "HOI_LAY",
+   "dry": false,
+   "result": "[{'target': 'AM (HOI_LAY)', 'sent': 68, 'failed': 0}, {'target': 'Trợ lý Vùng (HOI_LAY)', 'sent': 11}]"
+  },
+  {
+   "time": "08/09/2026 15:00:17",
+   "am_flow": "HOI_LAY",
+   "vung_flow": "HOI_LAY",
+   "dry": false,
+   "result": "[{'target': 'AM (HOI_LAY)', 'sent': 68, 'failed': 0}, {'target': 'Trợ lý Vùng (HOI_LAY)', 'sent': 12}]"
+  },
+  {
+   "time": "08/09/2026 16:00:02",
+   "am_flow": "HOI_LAY",
+   "vung_flow": "HOI_LAY",
+   "dry": false,
+   "result": "[{'target': 'AM (HOI_LAY)', 'sent': 66, 'failed': 0}, {'target': 'Trợ lý Vùng (HOI_LAY)', 'sent': 13}]"
+  },
+  {
+   "time": "09/09/2026 09:00:24",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "None"
+  },
+  {
+   "time": "09/09/2026 10:00:24",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "None"
+  },
+  {
+   "time": "09/09/2026 11:00:24",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "None"
+  },
+  {
+   "time": "10/09/2026 09:00:06",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "None"
+  },
+  {
+   "time": "10/09/2026 16:53:59",
+   "am_flow": "HOI_LAY",
+   "vung_flow": "HOI_LAY",
+   "dry": false,
+   "result": "None"
+  },
+  {
+   "time": "11/09/2026 09:00:07",
+   "am_flow": "ALL",
+   "vung_flow": "ALL",
+   "dry": false,
+   "result": "None"
+  }
+ ],
+ "hours_am_lay": [
+  14,
+  15,
+  16
+ ],
+ "hours_vung_lay": [
+  15
+ ],
+ "hours_am": [
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18
+ ],
+ "hours_vung": [
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18
+ ],
+ "interval_h": 3.0,
+ "hours": [
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18
+ ],
+ "last_run": "27/08/2026 15:00:06",
+ "next_run": 1787821206.5474203,
+ "last_result": {
+  "step": "scrape",
+  "ok": true,
+  "buu_cuc": 256,
+  "phieu": 1694,
+  "gio": "03/09/2026 12:07:55",
+  "loai": [
+   "Hối giao",
+   "Hối lấy",
+   "Hối trả"
+  ],
+  "phat": 209640000,
+  "results": [
+   {
+    "target": "AM",
+    "sent": 125,
+    "failed": 0
+   },
+   {
+    "target": "TV_BTB",
+    "ok": true,
+    "msg": "2095386611172937728",
+    "err": null
+   },
+   {
+    "target": "TV_DBB",
+    "ok": true,
+    "msg": "2095386620198985728",
+    "err": null
+   },
+   {
+    "target": "TV_DCL",
+    "ok": true,
+    "msg": "2095386629514100736",
+    "err": null
+   },
+   {
+    "target": "TV_DNB",
+    "ok": true,
+    "msg": "2095386638653923328",
+    "err": null
+   },
+   {
+    "target": "TV_DSH",
+    "ok": true,
+    "msg": "2095386647613050880",
+    "err": null
+   },
+   {
+    "target": "TV_HCM",
+    "ok": true,
+    "msg": "2095386657058623488",
+    "err": null
+   },
+   {
+    "target": "TV_HNO",
+    "ok": true,
+    "msg": "2095386665812135936,2095386674771075072",
+    "err": null
+   },
+   {
+    "target": "TV_NTB",
+    "ok": true,
+    "msg": "2095386684329459712",
+    "err": null
+   },
+   {
+    "target": "TV_TBB",
+    "ok": true,
+    "msg": "2095386693662220288",
+    "err": null
+   },
+   {
+    "target": "TV_TNB",
+    "ok": false,
+    "msg": "2095386702977863680",
+    "err": "3168644: Tạo kênh: get user id by identity failed"
+   },
+   {
+    "target": "TV_TNG",
+    "ok": true,
+    "msg": "2095386722326093824",
+    "err": null
+   },
+   {
+    "target": "TV_TNT",
+    "ok": true,
+    "msg": "2095386731868229632",
+    "err": null
+   },
+   {
+    "target": "TV_TTB",
+    "ok": true,
+    "msg": "2095386740621647872",
+    "err": null
+   },
+   {
+    "target": "TV_XBG",
+    "ok": true,
+    "msg": "2095386749710704640",
+    "err": null
+   }
+  ]
+ }
+}
