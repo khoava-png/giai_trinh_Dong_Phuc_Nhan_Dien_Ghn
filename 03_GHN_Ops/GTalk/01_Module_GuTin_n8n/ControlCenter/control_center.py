@@ -621,6 +621,7 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
         elif isinstance(data, bytes):
             self.wfile.write(data)
 
+    # Ẩn nút đăng nhập hoặc tự động vào buồng lái / không bắt buộc auth
     def _check_auth(self):
         return True
 
