@@ -660,7 +660,6 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
             history = STATE.get("sched", {}).get("history", [])
             return self._reply(200, {"ok": True, "history": history})
 
-        # UI & Assets (Hỗ trợ cả index.html và Index.html)
         if path in ("/dashboard", "/", "/index.html"):
             cur_dir = os.path.dirname(__file__)
             html_candidates = [
