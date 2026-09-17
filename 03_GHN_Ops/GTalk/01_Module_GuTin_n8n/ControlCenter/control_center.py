@@ -632,18 +632,8 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
-        # Health Check cho GCP Cloud Run & Cloud Scheduler
-        if path in ("/health", "/api/health"):
-            return self._reply(200, {
-                "status": "HEALTHY",
-                "service": "GHN Control Center Cloud Run V3",
-                "time": _now().isoformat(),
-                "admin": ADMIN_MA_NV,
-                "project": "ghn-sheets-automation"
-            })
-
-        # Root `/` cũng phục vụ trực tiếp index.html giao diện buồng lái
-        if path == "/":
+        # UI & Assets (Hỗ trợ cả index.html và Index.html cho cả root / và /dashboard)
+        if path in ("/dashboard", "/", "/index.html"):
             cur_dir = os.path.dirname(__file__)
             html_candidates = [
                 os.path.join(cur_dir, "index.html"),
@@ -654,6 +644,16 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                     with open(hp, "r", encoding="utf-8") as f:
                         return self._reply(200, f.read(), content_type="text/html; charset=utf-8")
             return self._reply(404, "index.html not found", content_type="text/plain")
+
+        # Health Check cho GCP Cloud Run & Cloud Scheduler
+        if path in ("/health", "/api/health"):
+            return self._reply(200, {
+                "status": "HEALTHY",
+                "service": "GHN Control Center Cloud Run V3",
+                "time": _now().isoformat(),
+                "admin": ADMIN_MA_NV,
+                "project": "ghn-sheets-automation"
+            })
 
         if path == "/api/logs":
             # Trả về lịch sử log chi tiết ánh xạ luồng gửi từ STATE hoặc Redis
