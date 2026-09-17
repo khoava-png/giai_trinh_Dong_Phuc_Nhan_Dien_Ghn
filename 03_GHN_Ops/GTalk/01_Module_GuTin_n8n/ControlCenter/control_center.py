@@ -731,3 +731,5 @@ def run_server(port=8080):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     run_server(port)
+
+# Force cloud run build trigger timestamp: 2026-09-17
