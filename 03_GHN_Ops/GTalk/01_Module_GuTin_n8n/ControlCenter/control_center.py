@@ -642,6 +642,19 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                 "project": "ghn-sheets-automation"
             })
 
+        # Root `/` cũng phục vụ trực tiếp index.html giao diện buồng lái
+        if path == "/":
+            cur_dir = os.path.dirname(__file__)
+            html_candidates = [
+                os.path.join(cur_dir, "index.html"),
+                os.path.join(cur_dir, "Index.html")
+            ]
+            for hp in html_candidates:
+                if os.path.exists(hp):
+                    with open(hp, "r", encoding="utf-8") as f:
+                        return self._reply(200, f.read(), content_type="text/html; charset=utf-8")
+            return self._reply(404, "index.html not found", content_type="text/plain")
+
         if path == "/api/logs":
             # Trả về lịch sử log chi tiết ánh xạ luồng gửi từ STATE hoặc Redis
             history = STATE.get("sched", {}).get("history", [])
