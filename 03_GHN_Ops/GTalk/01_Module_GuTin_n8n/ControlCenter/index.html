@@ -401,170 +401,48 @@
             </button>
           </div>
 
-          <!-- TAB 1: CÀO DỮ LIỆU -->
-          <div id="panel-tab-scrape" class="panel-tab-pane space-y-4">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div class="bg-white/80 p-3 rounded-xl border border-studio-ink/10 text-left">
-                <div class="text-[11px] text-studio-ink/60 font-semibold uppercase">BƯU CỤC</div>
-                <div class="text-xl font-headline font-bold text-studio-ink mt-0.5">286 kho</div>
+          <!-- TAB CHUYÊN BIỆT DUY NHẤT: LOG & ÁNH XẠ LUỒNG GỬI -->
+          <div id="panel-tab-audit" class="panel-tab-pane space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-studio-ink/10">
+              <div>
+                <h3 class="font-bold text-sm text-studio-ink">Bảng Ánh Xạ & Lịch Sử Luồng Gửi (Audit Trail)</h3>
+                <p class="text-xs text-studio-ink/60">Theo dõi chi tiết thời gian chạy, loại luồng (ALL / Hối lấy), trạng thái thành công/thất bại và nguyên nhân lỗi từng nhân sự, bưu cục.</p>
               </div>
-              <div class="bg-white/80 p-3 rounded-xl border border-studio-ink/10 text-left">
-                <div class="text-[11px] text-studio-ink/60 font-semibold uppercase">PHIẾU TỒN</div>
-                <div class="text-xl font-headline font-bold text-studio-ink mt-0.5">1.917 phiếu</div>
-              </div>
-              <div class="bg-white/80 p-3 rounded-xl border border-studio-ink/10 text-left">
-                <div class="text-[11px] text-studio-ink/60 font-semibold uppercase">TIỀN PHẠT</div>
-                <div class="text-xl font-headline font-bold text-rose-600 mt-0.5">211M VNĐ</div>
-              </div>
-              <div class="bg-white/80 p-3 rounded-xl border border-studio-ink/10 text-left">
-                <div class="text-[11px] text-studio-ink/60 font-semibold uppercase">KHÓA TRÙNG</div>
-                <div class="text-xl font-headline font-bold text-emerald-700 mt-0.5">100% Lock</div>
-              </div>
-            </div>
-            <div class="flex items-center gap-3 pt-1">
-              <button onclick="alert('⚡ Bắt đầu chạy liên hoàn: Cào Web → Ghi Sheets → Gửi GTalk!')" class="px-5 py-2.5 bg-studio-accent text-white font-bold text-xs rounded-xl shadow hover:opacity-90 transition">
-                ⚡ Chạy Liên Hoàn Auto-Pipeline
-              </button>
-              <button onclick="alert('⟳ Đang cào dữ liệu và ghi Google Sheet...')" class="px-4 py-2.5 bg-white text-studio-ink font-semibold text-xs rounded-xl border border-studio-ink/20 shadow-sm hover:bg-studio-badge transition">
-                ⟳ Cào + Ghi Sheet
+              <button onclick="loadAuditLogs()" class="px-3 py-1.5 bg-studio-ink text-white rounded-lg text-xs font-semibold shadow hover:bg-black transition flex items-center space-x-1.5">
+                <i class="fa-solid fa-rotate"></i>
+                <span>Làm Mới Log</span>
               </button>
             </div>
-          </div>
 
-          <!-- TAB 2: MẪU TIN GTALK -->
-          <div id="panel-tab-tpl" class="panel-tab-pane hidden space-y-3">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-bold text-studio-ink mb-1">Mẫu tin gửi AM ({ten_am}, {ngay_gio}, {bcs}):</label>
-                <textarea class="w-full h-24 p-2.5 text-xs font-mono border border-studio-ink/20 rounded-xl bg-white focus:outline-none" id="tplAm">CẦN XỬ LÝ PHIẾU HỐI GIAO / LẤY / TRẢ
-Hi Anh/ Chị {ten_am}, tính tới thời điểm {ngay_gio}
-{bcs}
-Chi tiết: https://g.ghn.studio/PhieuKhachHang</textarea>
-              </div>
-              <div>
-                <label class="block text-xs font-bold text-studio-ink mb-1">Mẫu tin gửi Trợ lý Vùng ({vung}, {ngay_gio}, {bcs}):</label>
-                <textarea class="w-full h-24 p-2.5 text-xs font-mono border border-studio-ink/20 rounded-xl bg-white focus:outline-none" id="tplVung">CẦN XỬ LÝ PHIẾU HỐI GIAO / LẤY / TRẢ
-Hi Anh/Chị Trợ Lý/ HRBP vùng {vung}, tính tới thời điểm {ngay_gio}
-{bcs}
-Chi tiết: https://g.ghn.studio/PhieuKhachHang</textarea>
-              </div>
-            </div>
-            <button onclick="alert('Đã lưu mẫu tin!')" class="px-4 py-2 bg-studio-ink text-white font-bold text-xs rounded-xl shadow">
-              💾 Lưu Mẫu Tin
-            </button>
-          </div>
-
-          <!-- TAB 3: GỬI AM (160 NGƯỜI) -->
-          <div id="panel-tab-am" class="panel-tab-pane hidden space-y-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-studio-ink">Phân luồng:</span>
-                <select class="px-3 py-1.5 bg-white border border-studio-ink/20 rounded-lg text-xs font-medium focus:outline-none">
-                  <option>📋 Tất cả (Giao + Lấy + Trả)</option>
-                  <option>🚚 Chỉ Hối Giao</option>
-                  <option>📥 Chỉ Hối Lấy</option>
-                  <option>🔄 Chỉ Hối Trả</option>
-                </select>
-              </div>
-              <div class="flex gap-2">
-                <button onclick="alert('Xem trước 160 AM')" class="px-3 py-1.5 bg-white text-studio-ink font-medium text-xs rounded-lg border border-studio-ink/20 shadow-sm">
-                  👁 Xem trước
-                </button>
-                <button onclick="alert('Bắt đầu gửi 160 AM!')" class="px-3 py-1.5 bg-studio-accent text-white font-bold text-xs rounded-lg shadow">
-                  📤 Gửi 160 AM
-                </button>
-              </div>
-            </div>
-            <div class="overflow-x-auto max-h-36 border border-studio-ink/10 rounded-xl bg-white">
-              <table class="w-full text-xs text-left">
-                <thead class="bg-studio-badge text-studio-ink font-bold uppercase text-[10px] sticky top-0">
-                  <tr>
-                    <th class="p-2 w-8"><input type="checkbox" checked></th>
-                    <th class="p-2">Mã NV</th>
-                    <th class="p-2">Tên Quản Lý AM</th>
-                    <th class="p-2">Tổng Phiếu</th>
-                    <th class="p-2">Cần Gấp</th>
-                    <th class="p-2">Phạt</th>
+            <div class="overflow-x-auto rounded-xl border border-studio-ink/15 bg-white shadow-sm max-h-72">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-studio-badge border-b border-studio-ink/10 text-[11px] font-bold text-studio-ink uppercase tracking-wider sticky top-0">
+                    <th class="px-4 py-3">Thời gian</th>
+                    <th class="px-4 py-3">Luồng AM</th>
+                    <th class="px-4 py-3">Luồng Vùng</th>
+                    <th class="px-4 py-3">Chế độ</th>
+                    <th class="px-4 py-3">Trạng thái & Chi tiết kết quả</th>
+                    <th class="px-4 py-3 text-right">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody class="divide-y divide-studio-ink/10">
+                <tbody id="auditLogBody" class="divide-y divide-studio-ink/10 text-xs text-studio-ink">
                   <tr>
-                    <td class="p-2"><input type="checkbox" checked></td>
-                    <td class="p-2 font-mono font-bold">3088630</td>
-                    <td class="p-2 font-medium">Trần Văn Phước</td>
-                    <td class="p-2 font-bold text-amber-600">12</td>
-                    <td class="p-2 text-rose-600 font-bold">8</td>
-                    <td class="p-2 text-rose-600 font-bold">4</td>
-                  </tr>
-                  <tr>
-                    <td class="p-2"><input type="checkbox" checked></td>
-                    <td class="p-2 font-mono font-bold">3044049</td>
-                    <td class="p-2 font-medium">Lê Đắc Vinh</td>
-                    <td class="p-2 font-bold text-amber-600">24</td>
-                    <td class="p-2 text-rose-600 font-bold">15</td>
-                    <td class="p-2 text-rose-600 font-bold">9</td>
+                    <td colspan="6" class="px-4 py-8 text-center text-studio-ink/50">Đang tải lịch sử log thực thi...</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <!-- TAB 4: GỬI TRỢ LÝ VÙNG (14 VÙNG) -->
-          <div id="panel-tab-vung" class="panel-tab-pane hidden space-y-3">
-            <h4 class="text-xs font-bold text-studio-ink">Báo Cáo 14 Vùng GHN & Mã NV Trợ Lý:</h4>
-            <textarea class="w-full h-20 p-2.5 text-xs font-mono border border-studio-ink/20 rounded-xl bg-white focus:outline-none">NTB = 3049378
-DSH = 3088630
-XBG = 3044049
-DNB = 3026736
-HCM = 3004181</textarea>
-            <div class="flex gap-2">
-              <button onclick="alert('Đã lưu mã NV Trợ lý!')" class="px-4 py-2 bg-studio-ink text-white font-bold text-xs rounded-xl">
-                💾 Lưu ID Trợ Lý
-              </button>
-              <button onclick="alert('Bắt đầu gửi 14 Vùng!')" class="px-4 py-2 bg-studio-accent text-white font-bold text-xs rounded-xl shadow">
-                📤 Gửi 14 Vùng
-              </button>
-            </div>
-          </div>
-
-          <!-- TAB 5: LỊCH TỰ ĐỘNG & LOG -->
-          <div id="panel-tab-sched" class="panel-tab-pane hidden space-y-3">
-            <div class="p-3 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-900 font-medium">
-              🔒 <b>Idempotency Lock Active:</b> Khóa tự động ghi nhận khung giờ đã gửi, tuyệt đối không gửi trùng khi Render restart.
-            </div>
-            <div class="grid grid-cols-2 gap-3 text-xs">
-              <div class="p-3 bg-white rounded-xl border border-studio-ink/10">
-                <b>📋 Luồng Toàn Bộ:</b> 9, 10, 11, 12, 13h
-              </div>
-              <div class="p-3 bg-white rounded-xl border border-studio-ink/10">
-                <b class="text-amber-700">⚡ Luồng Ưu Tiên:</b> 14, 15, 16h
-              </div>
-            </div>
-            <button onclick="alert('Đã lưu cấu hình lịch!')" class="px-4 py-2 bg-studio-ink text-white font-bold text-xs rounded-xl">
-              💾 Lưu Cấu Hình Lịch
-            </button>
-          </div>
-
         </div>
 
-        <!-- THANH FLOATING DOCK 5 TAB CHÍNH (ĐẶT Ở ĐÁY MÀN HÌNH) -->
+        <!-- THANH FLOATING DOCK DUY NHẤT -->
         <nav class="glass-panel px-4 py-2.5 rounded-full flex items-center gap-2 shadow-xl border border-studio-ink/15">
-          <button onclick="openTabPanel('panel-tab-scrape', '⚡ Cào Dữ Liệu & Auto-Pipeline')" class="dock-btn studio-pill text-xs font-bold" data-tab="panel-tab-scrape">
-            ① Cào Dữ Liệu
+          <button onclick="openTabPanel('panel-tab-audit', '📋 Chi Tiết Log & Ánh Xạ Luồng Gửi'); loadAuditLogs();" class="dock-btn studio-pill text-xs font-bold active" data-tab="panel-tab-audit">
+            📋 Chi Tiết Log & Ánh Xạ Luồng Gửi
           </button>
-          <button onclick="openTabPanel('panel-tab-tpl', '📝 Mẫu Tin Báo Cáo GTalk')" class="dock-btn studio-pill text-xs font-semibold" data-tab="panel-tab-tpl">
-            ② Mẫu Tin
-          </button>
-          <button onclick="openTabPanel('panel-tab-am', '👥 Gửi Quản Lý Khu Vực AM (160)')" class="dock-btn studio-pill text-xs font-semibold" data-tab="panel-tab-am">
-            ③ Gửi AM (160)
-          </button>
-          <button onclick="openTabPanel('panel-tab-vung', '🏢 Gửi Trợ Lý Giám Đốc Vùng (14)')" class="dock-btn studio-pill text-xs font-semibold" data-tab="panel-tab-vung">
-            ④ Trợ Lý Vùng
-          </button>
-          <button onclick="openTabPanel('panel-tab-sched', '⏰ Lịch Tự Động & Idempotency Lock')" class="dock-btn studio-pill text-xs font-semibold" data-tab="panel-tab-sched">
-            ⑤ Lịch & Log
-          </button>
-        </nav>
+        
 
       </div>
 
