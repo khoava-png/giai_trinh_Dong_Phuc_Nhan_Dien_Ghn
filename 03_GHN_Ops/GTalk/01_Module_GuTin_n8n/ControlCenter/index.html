@@ -796,9 +796,41 @@ HCM = 3004181</textarea>
       }, 500);
     }
 
-    function closeDashboard() {
-      document.getElementById('demoDashboard').classList.add('hidden');
-      hideTabPanel();
+    // ============================================================
+    // TAB: LOG & ÁNH XẠ LUỒNG GỬI (AUDIT TRAIL & LOG)
+    // ============================================================
+    async function loadAuditLogs() {
+      const tbody = document.getElementById('auditLogBody');
+      if (!tbody) return;
+      tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">Đang tải lịch sử log và ánh xạ luồng gửi...</td></tr>`;
+      
+      const res = await post('/api/logs', {});
+      if (res && res.ok && res.history && res.history.length > 0) {
+        let html = '';
+        res.history.reverse().forEach(item => {
+          const time = item.time || '—';
+          const amFlow = item.am_flow || 'ALL';
+          const vungFlow = item.vung_flow || 'ALL';
+          const dry = item.dry ? 'Dry-run' : 'Official';
+          let resStr = item.result || 'Đã gửi thành công';
+          
+          html += `
+            <tr class="hover:bg-slate-800/40 transition">
+              <td class="px-4 py-3 whitespace-nowrap text-xs font-mono text-amber-400">${time}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-xs"><span class="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">${amFlow}</span></td>
+              <td class="px-4 py-3 whitespace-nowrap text-xs"><span class="bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded">${vungFlow}</span></td>
+              <td class="px-4 py-3 whitespace-nowrap text-xs"><span class="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">${dry}</span></td>
+              <td class="px-4 py-3 text-xs text-slate-300 max-w-xs truncate" title="${resStr}">${resStr}</td>
+              <td class="px-4 py-3 whitespace-nowrap text-xs text-right">
+                <button onclick='alert(${JSON.stringify(resStr)})' class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs transition border border-slate-700">Chi tiết</button>
+              </td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+      } else {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">Chưa có lịch sử log thực thi nào gần đây.</td></tr>`;
+      }
     }
 
     // ============================================================

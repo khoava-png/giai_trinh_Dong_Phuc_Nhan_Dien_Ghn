@@ -679,6 +679,34 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
         self._reply(404, {"error": "Endpoint Not Found"})
 
 def run_server(port=8080):
+    # Khởi động luồng Background Scheduler nội bộ tự động thực thi chu kỳ:
+    # - Từ 06:00 đến 13:00 (Mỗi giờ/hoặc định kỳ): Chạy filter=ALL
+    # - Từ 14:00 đến 18:00: Chạy filter=HOI_LAY
+    def _bg_scheduler_loop():
+        last_run_hour = -1
+        print("🟢 [Internal Background Scheduler] Đã khởi động luồng canh giờ tự động (6h-13h ALL, 14h-18h HOI_LAY)...", flush=True)
+        while True:
+            try:
+                now_dt = datetime.datetime.now(zoneinfo.ZoneInfo("Asia/Ho_Chi_Minh"))
+                hour = now_dt.hour
+                minute = now_dt.minute
+                
+                # Chạy đúng phút 00 của các giờ trong khung 6h-18h và chưa chạy trong giờ đó
+                if 6 <= hour <= 18 and minute == 0 and hour != last_run_hour:
+                    filter_type = "ALL" if hour <= 13 else "HOI_LAY"
+                    print(f"⏰ [Scheduler] Tự động kích hoạt chu trình: {filter_type} lúc {now_dt.strftime('%Y-%m-%d %H:%M:%S')}", flush=True)
+                    try:
+                        run_dispatch_cycle(filter_type=filter_type, send_to="ALL", dry_run=False)
+                        last_run_hour = hour
+                    except Exception as ex:
+                        print(f"❌ [Scheduler Error] Lỗi khi chạy chu kỳ {filter_type}: {ex}", flush=True)
+            except Exception as e:
+                print(f"❌ [Scheduler Loop Error]: {e}", flush=True)
+            time.sleep(30) # Kiểm tra mỗi 30 giây
+
+    sched_thread = threading.Thread(target=_bg_scheduler_loop, daemon=True)
+    sched_thread.start()
+
     server_address = ("", port)
     httpd = ThreadingHTTPServer(server_address, ControlCenterHandler)
     print(f"🚀 GHN Control Center V3 All-in-One Cloud Run đang lắng nghe tại port {port}...", flush=True)
