@@ -154,7 +154,7 @@ DEFAULT_TEMPLATES = {
     )
 }
 
-# --- GLOBAL STATE ---
+# --- GLOBAL STATE & PERSISTENT STATE ---
 STATE = {
     "status": "IDLE",
     "last_run": None,
@@ -163,6 +163,63 @@ STATE = {
     "last_duration_s": 0,
     "activity": []
 }
+
+# --- PERSISTENT STATE (LOCAL FALLBACK STORAGE) ---
+# NOTE: .control_center_state.json is an ephemeral/local fallback storage on Cloud Run
+# for fast restart recovery. Production truth is backed by Google Sheets (_Control_Center).
+STATUS_FILE = os.path.join(os.path.dirname(__file__), ".control_center_state.json")
+
+def _load_persistent_state():
+    if os.path.exists(STATUS_FILE):
+        try:
+            with open(STATUS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return data
+        except Exception:
+            pass
+    return {
+        "crawler_state": {
+            "status": "OFFLINE",
+            "last_check": None,
+            "last_success": None,
+            "last_error": None
+        },
+        "google_sheet_state": {
+            "status": "ONLINE",
+            "last_check": None,
+            "last_success": None,
+            "last_error": None
+        },
+        "gtalk_state": {
+            "status": "ONLINE",
+            "last_check": None,
+            "last_success": None,
+            "last_error": None
+        },
+        "scheduler_state": {
+            "status": "ONLINE",
+            "last_check": None,
+            "last_success": None,
+            "last_error": None
+        },
+        "cycle_state": {
+            "status": "IDLE",
+            "cycle_id": "—",
+            "last_check": None,
+            "last_success": None,
+            "last_error": None,
+            "success_count": 0,
+            "failed_count": 0,
+            "duration": 0
+        }
+    }
+
+def _save_persistent_state(st_data):
+    try:
+        with open(STATUS_FILE, "w", encoding="utf-8") as f:
+            json.dump(st_data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[WARN] Không thể lưu persistent state: {e}", flush=True)
 
 def _now():
     return datetime.datetime.now(VN_TZ)
@@ -175,7 +232,7 @@ def _log_activity(action, status, details=""):
         STATE["activity"].pop()
     print(f"[{t_str}] [{action}] [{status}] {details}", flush=True)
 
-# --- GOOGLE SHEETS HELPER ---
+# --- GOOGLE SHEETS HELPER (WITH RETRY & CLIENT INVALIDATION) ---
 _sheets_svc = None
 _sheets_lock = threading.Lock()
 
@@ -187,18 +244,50 @@ def get_sheets_service():
         if _sheets_svc is not None:
             return _sheets_svc
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-        if os.environ.get("GOOGLE_KEY_JSON"):
-            info = json.loads(os.environ["GOOGLE_KEY_JSON"])
-            creds = Credentials.from_service_account_info(info, scopes=scopes)
-        else:
-            key_file = _resolve_key_file()
-            if key_file:
-                creds = Credentials.from_service_account_file(key_file, scopes=scopes)
+        try:
+            if os.environ.get("GOOGLE_KEY_JSON"):
+                info = json.loads(os.environ["GOOGLE_KEY_JSON"])
+                creds = Credentials.from_service_account_info(info, scopes=scopes)
             else:
-                from google.auth import default
-                creds, _ = default(scopes=scopes)
-        _sheets_svc = build("sheets", "v4", credentials=creds, cache_discovery=False)
+                key_file = _resolve_key_file()
+                if key_file:
+                    creds = Credentials.from_service_account_file(key_file, scopes=scopes)
+                else:
+                    from google.auth import default
+                    creds, _ = default(scopes=scopes)
+            _sheets_svc = build("sheets", "v4", credentials=creds, cache_discovery=False)
+        except Exception as e:
+            print(f"[ERROR] Không thể khởi tạo Google Sheets service: {e}", flush=True)
+            raise e
         return _sheets_svc
+
+def _invalidate_sheets_service(ex=None):
+    global _sheets_svc
+    with _sheets_lock:
+        print(f"[WARN] Invalidate Google Sheets client do lỗi: {ex}", flush=True)
+        _sheets_svc = None
+
+def execute_with_sheets_retry(func, *args, **kwargs):
+    """
+    Thực thi Google Sheets API call với Retry (tối đa 3 lần, exponential backoff).
+    Xử lý: BrokenPipeError, socket.timeout, ConnectionError, HTTP 429, 5xx, và Invalid/Expired token.
+    """
+    max_retries = 3
+    delay = 2.0
+    for attempt in range(max_retries):
+        try:
+            service = get_sheets_service()
+            return func(service, *args, **kwargs)
+        except Exception as e:
+            err_str = str(e).lower()
+            is_net_err = any(k in err_str for k in ["broken pipe", "timeout", "connection", "reset", "50", "429", "invalid_grant"])
+            print(f"[WARN] Sheets API lỗi (lần {attempt+1}/{max_retries}): {e}", flush=True)
+            _invalidate_sheets_service(e)
+            if attempt == max_retries - 1:
+                raise e
+            time.sleep(delay)
+            delay *= 2.0
+    raise Exception("Sheets API retry failed after max attempts")
 
 # --- GTALK OA CLIENT (MBFF PRODUCTION API) ---
 def _get_or_create_channel(oa_id, oa_token, ma_nv):
@@ -437,38 +526,54 @@ def render_vung_message(reg_name, vung_info, filter_type, template_text, now_str
 # --- THỰC THI CHU TRÌNH GỬI TIN BẢN SPEED-OPTIMIZED (20s) ---
 def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
     """
-    Bắn toàn bộ tin nhắn định kỳ tới AM & Trợ lý:
+    Bắn toàn bộ tin nhắn định kỳ tới AM & Trợ lý (với retry chi tiết & micro-timing logging):
     1. Đọc dữ liệu Sheet (Chi_tiet, Co_Cau).
-    2. Gom nhóm & sinh nội dung (xử lý multi-assistant bằng forward-fill).
+    2. Gom nhóm & sinh nội dung.
     3. Gửi mẫu tin nhiều phiếu nhất cho Admin (3049378) trước để duyệt.
-    4. Bắn song song 5 luồng cho 166 người (tốc độ ~5-8 tin/giây, xong trong ~20s).
+    4. Bắn song song 5 luồng cho AM/Trợ lý.
     5. Cập nhật Sheet (_Control_Center!A83) & gửi tin tổng kết cho Admin.
     """
+    import uuid
+    cycle_id = f"CYC-{uuid.uuid4().hex[:8]}"
     now_dt = _now()
     now_str = now_dt.strftime("%d/%m/%Y %H:%M")
     filter_type = filter_type.upper()
-    _log_activity("CYCLE_RUN", "START", f"Bắt đầu chu trình gửi tin ({filter_type}, to={send_to}, dry_run={dry_run})")
+    _log_activity("CYCLE_RUN", "START", f"[{cycle_id}] Bắt đầu chu trình gửi tin ({filter_type}, to={send_to}, dry_run={dry_run})")
 
-    service = get_sheets_service()
+    t_start_all = time.time()
+    t_cred_start = time.time()
+    # Khởi tạo service qua get_sheets_service
+    _ = get_sheets_service()
+    t_cred_dur = round(time.time() - t_cred_start, 3)
 
-    # 1. Đọc Chi_tiet & Co_Cau
-    resp = service.spreadsheets().values().batchGet(
-        spreadsheetId=SHEET_ID,
-        ranges=["Chi_tiet!A1:N", "Co_Cau!S3:W30"]
-    ).execute()
+    # 1. Đọc Chi_tiet & Co_Cau (với retry sheets read)
+    t_read_start = time.time()
+    def _fetch_data(svc):
+        return svc.spreadsheets().values().batchGet(
+            spreadsheetId=SHEET_ID,
+            ranges=["Chi_tiet!A1:N", "Co_Cau!S3:W30"]
+        ).execute()
+
+    try:
+        resp = execute_with_sheets_retry(_fetch_data)
+    except Exception as e:
+        _log_activity("CYCLE_RUN", "FAILED", f"[{cycle_id}] Lỗi đọc Google Sheet sau retry: {e}")
+        return {"success": False, "error": f"Sheet read failed: {str(e)}", "cycle_id": cycle_id}
+    t_read_dur = round(time.time() - t_read_start, 3)
 
     val_ranges = resp.get("valueRanges", [])
     ct_vals = val_ranges[0].get("values", [])
     cc_vals = val_ranges[1].get("values", []) if len(val_ranges) > 1 else []
 
     if len(ct_vals) <= 1:
-        _log_activity("CYCLE_RUN", "FAILED", "Không có dữ liệu trong Chi_tiet")
-        return {"success": False, "error": "Chi_tiet rỗng"}
+        _log_activity("CYCLE_RUN", "FAILED", f"[{cycle_id}] Không có dữ liệu trong Chi_tiet")
+        return {"success": False, "error": "Chi_tiet rỗng", "cycle_id": cycle_id}
 
     headers = ct_vals[0]
     raw_tickets = ct_vals[1:]
 
-    # Map Trợ lý Vùng từ Co_Cau (forward-fill cho các vùng có nhiều trợ lý như HNO, TNB)
+    # Map Trợ lý Vùng từ Co_Cau
+    t_filter_start = time.time()
     tro_ly_map = defaultdict(list)
     curr_vung = ""
     for r in cc_vals:
@@ -516,36 +621,39 @@ def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
                     "total": vinfo["total"],
                     "content": msg
                 })
+    t_filter_dur = round(time.time() - t_filter_start, 3)
 
     if not tasks:
-        _log_activity("CYCLE_RUN", "DONE", "0 tin nhắn cần gửi (Không có phiếu tồn)")
-        return {"success": True, "total": 0, "sent": 0, "failed": 0, "duration_s": 0}
+        _log_activity("CYCLE_RUN", "DONE", f"[{cycle_id}] 0 tin nhắn cần gửi (Không có phiếu tồn)")
+        return {"success": True, "total": 0, "sent": 0, "failed": 0, "duration_s": round(time.time() - t_start_all, 2), "cycle_id": cycle_id}
 
-    # Sắp xếp để tìm tin nhiều phiếu nhất (Top 1)
+    # Sắp xếp tìm tin nhiều phiếu nhất (Top 1)
     tasks.sort(key=lambda x: x["total"], reverse=True)
     top_task = tasks[0]
 
     # BƯỚC 3: Gửi tin mẫu Top 1 cho Admin 3049378 duyệt trước
     top_approval_msg = f"*[MẪU DUYỆT TỰ ĐỘNG - TOP 1]*\n\n" + top_task["content"]
     if not dry_run:
-        _log_activity("ADMIN_APPROVAL", "SENDING", f"Gửi tin mẫu Top 1 cho Admin {ADMIN_MA_NV} ({top_task['name']} - {top_task['total']} phiếu)")
+        _log_activity("ADMIN_APPROVAL", "SENDING", f"[{cycle_id}] Gửi tin mẫu Top 1 cho Admin {ADMIN_MA_NV} ({top_task['name']} - {top_task['total']} phiếu)")
         send_gtalk_message(ADMIN_MA_NV, top_approval_msg)
     else:
-        _log_activity("ADMIN_APPROVAL", "DRY_RUN", f"[DRY-RUN] Sẽ gửi tin mẫu Top 1 cho Admin {ADMIN_MA_NV} ({top_task['name']})")
+        _log_activity("ADMIN_APPROVAL", "DRY_RUN", f"[{cycle_id}] [DRY-RUN] Sẽ gửi tin mẫu Top 1 cho Admin {ADMIN_MA_NV} ({top_task['name']})")
 
-    # BƯỚC 4: Bắn song song có kiểm soát (Pool 5 workers ~ 5-8 tin/s, 150ms delay)
+    # BƯỚC 4: Bắn song song có kiểm soát (Pool 5 workers)
+    t_send_start = time.time()
     success_count = 0
     fail_count = 0
     sent_details = []
 
     def _worker(task):
-        time.sleep(0.15)  # Nhịp nghỉ an toàn 150ms chống nghẽn Gateway
+        time.sleep(0.15)
         if dry_run:
             return task, {"success": True, "msg_id": "dry_run_id"}
         res = send_gtalk_message(task["id"], task["content"])
+        if not res.get("success"):
+            _log_activity("GTALK_FAIL", "ERROR", f"[{cycle_id}] Gửi thất bại tới {task['type']} - ID: {task['id']} ({task['name']}): {res.get('error')}")
         return task, res
 
-    start_t = time.time()
     with ThreadPoolExecutor(max_workers=5) as executor:
         futures = [executor.submit(_worker, t) for t in tasks]
         for f in as_completed(futures):
@@ -556,52 +664,116 @@ def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
                 fail_count += 1
                 sent_details.append(f"{t['id']} ({t['name']}): {r.get('error')}")
 
-    duration = round(time.time() - start_t, 2)
-    _log_activity("CYCLE_RUN", "DONE", f"Đã gửi {success_count}/{len(tasks)} tin trong {duration}s (Lỗi: {fail_count})")
+    t_send_dur = round(time.time() - t_send_start, 3)
+    _log_activity("CYCLE_RUN", "DONE", f"[{cycle_id}] Đã gửi {success_count}/{len(tasks)} tin (Lỗi: {fail_count})")
 
     # BƯỚC 5: Gửi tin nhắn tổng kết tới Admin 3049378
     summary_msg = (
         f"📊 *[BÁO CÁO GỬI TIN CONTROL CENTER V3]*\n"
+        f"• Mã chu kỳ: *{cycle_id}*\n"
         f"• Đợt lọc: *{filter_type}* ({now_str})\n"
-        f"• Đã gửi thành công: *{success_count}/{len(tasks)}* tin ({duration}s)\n"
+        f"• Đã gửi thành công: *{success_count}/{len(tasks)}* tin\n"
         f"• Thất bại: *{fail_count}*\n"
-        f"• Hạ tầng: Google Cloud Run All-in-One Python 3.11"
+        f"• Timing: cred={t_cred_dur}s | read={t_read_dur}s | filter={t_filter_dur}s | send={t_send_dur}s"
     )
     if not dry_run:
         send_gtalk_message(ADMIN_MA_NV, summary_msg)
 
-    # BƯỚC 6: Ghi log vào Google Sheet (_Control_Center!A83)
+    # BƯỚC 6: Ghi log vào Google Sheet (_Control_Center!A83) với retry
+    t_log_start = time.time()
     try:
         log_row = [
             now_dt.strftime("%Y-%m-%d %H:%M:%S"),
             now_dt.strftime("%Y-%m-%d_%H"),
-            f"Cloud Run Cycle ({filter_type})",
+            f"Cloud Run Cycle ({filter_type}) [{cycle_id}]",
             "OK" if fail_count == 0 else "PARTIAL",
             str(success_count),
-            f"Thành công {success_count}/{len(tasks)} trong {duration}s" + (f" | Lỗi: {'; '.join(sent_details[:3])}" if sent_details else "")
+            f"Thành công {success_count}/{len(tasks)} | cred={t_cred_dur}s, read={t_read_dur}s, send={t_send_dur}s" + (f" | Lỗi: {'; '.join(sent_details[:3])}" if sent_details else "")
         ]
-        service.spreadsheets().values().append(
-            spreadsheetId=SHEET_ID,
-            range="_Control_Center!A83",
-            valueInputOption="USER_ENTERED",
-            body={"values": [log_row]}
-        ).execute()
+        def _append_log(svc):
+            return svc.spreadsheets().values().append(
+                spreadsheetId=SHEET_ID,
+                range="_Control_Center!A83",
+                valueInputOption="USER_ENTERED",
+                body={"values": [log_row]}
+            ).execute()
+        execute_with_sheets_retry(_append_log)
     except Exception as e:
-        print(f"[WARN] Không thể ghi log vào Sheet: {e}", flush=True)
+        print(f"[WARN] [{cycle_id}] Không thể ghi log vào Sheet sau retry: {e}", flush=True)
+    t_log_dur = round(time.time() - t_log_start, 3)
+
+    total_duration = round(time.time() - t_start_all, 2)
+    _log_activity("CYCLE_TIMING", "INFO", f"[{cycle_id}] Timings: cred={t_cred_dur}s, read={t_read_dur}s, filter={t_filter_dur}s, send={t_send_dur}s, log={t_log_dur}s | Total: {total_duration}s")
+
+    # Cập nhật component states độc lập
+    p_st = _load_persistent_state()
+    t_str = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+    # 1. Cycle State (Dispatch)
+    p_st["cycle_state"] = {
+        "status": "DONE" if fail_count == 0 else "PARTIAL",
+        "cycle_id": cycle_id,
+        "last_check": t_str,
+        "last_success": t_str,
+        "last_error": f"Có {fail_count} lỗi gửi tin" if fail_count > 0 else None,
+        "success_count": success_count,
+        "failed_count": fail_count,
+        "duration": total_duration
+    }
+
+    # 2. Google Sheet State (Phân biệt Write health từ crawler/log và Read health từ Control Center)
+    sheet_status = "ONLINE"
+    sheet_err = None
+    try:
+        # Test Read health nhẹ từ Google Sheet
+        def _test_read(svc):
+            return svc.spreadsheets().values().get(spreadsheetId=SHEET_ID, range="_Control_Center!A1").execute()
+        execute_with_sheets_retry(_test_read)
+    except Exception as e:
+        sheet_status = "WARNING"
+        sheet_err = f"Sheet Read Error: {e}"
+
+    if fail_count > 0:
+        sheet_err = (sheet_err or "") + f" | Sheet Write (Log append) warning: {fail_count} errors"
+
+    p_st["google_sheet_state"] = {
+        "status": sheet_status,
+        "last_check": t_str,
+        "last_success": t_str if sheet_status == "ONLINE" else None,
+        "last_error": sheet_err
+    }
+
+    # 3. GTalk State
+    p_st["gtalk_state"] = {
+        "status": "ONLINE" if fail_count == 0 else "WARNING",
+        "last_check": t_str,
+        "last_success": t_str,
+        "last_error": f"{fail_count} tin gửi thất bại" if fail_count > 0 else None
+    }
+
+    _save_persistent_state(p_st)
 
     STATE["last_run"] = now_dt.strftime("%Y-%m-%d %H:%M:%S")
     STATE["last_filter"] = filter_type
     STATE["last_sent_count"] = success_count
-    STATE["last_duration_s"] = duration
+    STATE["last_duration_s"] = total_duration
     STATE["status"] = "IDLE"
 
     return {
         "success": True,
+        "cycle_id": cycle_id,
         "filter": filter_type,
         "total": len(tasks),
         "sent": success_count,
         "failed": fail_count,
-        "duration_s": duration,
+        "duration_s": total_duration,
+        "timings": {
+            "credential": t_cred_dur,
+            "sheet_read": t_read_dur,
+            "filter": t_filter_dur,
+            "send": t_send_dur,
+            "log": t_log_dur
+        },
         "errors": sent_details[:10] if sent_details else []
     }
 
@@ -632,6 +804,16 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
+        # Hỗ trợ cả GET cho chu trình cào + gửi tin
+        if path in ("/api/cycle/run", "/api/scrape_and_send"):
+            qs = parse_qs(parsed.query)
+            filter_type = qs.get("filter", ["ALL"])[0].upper()
+            send_to = qs.get("to", ["ALL"])[0].upper()
+            dry_run = qs.get("dry_run", ["false"])[0].lower() in ("true", "1", "yes")
+
+            res = run_dispatch_cycle(filter_type=filter_type, send_to=send_to, dry_run=dry_run)
+            return self._reply(200, res)
+
         # UI & Assets (Hỗ trợ cả index.html và Index.html cho cả root / và /dashboard)
         if path in ("/dashboard", "/", "/index.html"):
             cur_dir = os.path.dirname(__file__)
@@ -645,7 +827,7 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                         return self._reply(200, f.read(), content_type="text/html; charset=utf-8")
             return self._reply(404, "index.html not found", content_type="text/plain")
 
-        # Health Check cho GCP Cloud Run & Cloud Scheduler
+        # Health Check cho GCP Cloud Run & Cloud Scheduler (Nâng cấp trả về System Status cho Phase 1)
         if path in ("/health", "/api/health"):
             return self._reply(200, {
                 "status": "HEALTHY",
@@ -655,10 +837,111 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                 "project": "ghn-sheets-automation"
             })
 
+        if path == "/api/system/status":
+            p_st = _load_persistent_state()
+            activities = STATE.get("activity", [])
+
+            # Lấy trạng thái tách biệt từ các component states độc lập
+            crawler_s = p_st.get("crawler_state", {})
+            sheet_s = p_st.get("google_sheet_state", {})
+            gtalk_s = p_st.get("gtalk_state", {})
+            sched_s = p_st.get("scheduler_state", {})
+            cycle_s = p_st.get("cycle_state", {})
+
+            # Tìm last_scrape từ crawler_state hoặc fallback activity log chứa "CAO" / "SCRAPE"
+            last_scrape_time = crawler_s.get("last_success") or crawler_s.get("last_check")
+            if not last_scrape_time and activities:
+                for act in activities:
+                    if "CAO" in act.get("action", "") or "SCRAPE" in act.get("action", ""):
+                        last_scrape_time = act.get("time")
+                        break
+
+            # Tìm last_cycle từ cycle_state hoặc fallback activity log chứa "CYCLE"
+            last_cycle_time = cycle_s.get("last_success") or cycle_s.get("last_check")
+            if not last_cycle_time and activities:
+                for act in activities:
+                    if "CYCLE" in act.get("action", ""):
+                        last_cycle_time = act.get("time")
+                        break
+
+            # Tính toán Data Freshness & Crawler Status dựa trên age phút của crawler
+            now = _now()
+            age_minutes = 99999
+            freshness_status = "STALE"
+            crawler_status = crawler_s.get("status", "OFFLINE")
+            crawler_detail = crawler_s.get("last_error") or "Chưa ghi nhận lần cào nào"
+
+            if last_scrape_time:
+                try:
+                    dt_scrape = datetime.datetime.strptime(last_scrape_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=VN_TZ)
+                    age_minutes = int((now - dt_scrape).total_seconds() / 60)
+
+                    if age_minutes <= 60:
+                        freshness_status = "FRESH"
+                        crawler_status = "ONLINE"
+                        crawler_detail = f"Cào thành công cách đây {age_minutes} phút"
+                    elif age_minutes <= 180:
+                        freshness_status = "STALE"
+                        crawler_status = "WARNING"
+                        crawler_detail = f"Cảnh báo: Dữ liệu cũ ({age_minutes} phút trước)"
+                    else:
+                        freshness_status = "CRITICAL"
+                        crawler_status = "OFFLINE"
+                        crawler_detail = f"Lỗi: Không cào dữ liệu trong {age_minutes // 60} giờ qua!"
+                except Exception as ex:
+                    crawler_status = "WARNING"
+                    crawler_detail = f"Lỗi parse thời gian: {ex}"
+            else:
+                crawler_status = "OFFLINE"
+                crawler_detail = "Chưa có bản ghi cào phiếu thực tế"
+                freshness_status = "CRITICAL"
+
+            return self._reply(200, {
+                "ok": True,
+                "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
+                "storage_type": "ephemeral_local_fallback (Production truth in Google Sheets _Control_Center)",
+                "components": {
+                    "crawler": {
+                        "status": crawler_status,
+                        "detail": crawler_detail,
+                        "age_minutes": age_minutes
+                    },
+                    "google_sheet": {
+                        "status": sheet_s.get("status", "ONLINE"),
+                        "detail": sheet_s.get("last_error") or "Connected to ghn-sheet-bot"
+                    },
+                    "control_center": {
+                        "status": "ONLINE",
+                        "detail": "Cloud Run V3 active (Isolated Component States)"
+                    },
+                    "scheduler": {
+                        "status": sched_s.get("status", "ONLINE"),
+                        "detail": sched_s.get("last_error") or "Internal & Cloud Scheduler active"
+                    },
+                    "gtalk": {
+                        "status": gtalk_s.get("status", "ONLINE"),
+                        "detail": gtalk_s.get("last_error") or "GTalk OA Gateway operational"
+                    }
+                },
+                "metrics": {
+                    "last_scrape": last_scrape_time or "—",
+                    "last_cycle": last_cycle_time or "—",
+                    "data_freshness": freshness_status,
+                    "age_minutes": age_minutes
+                },
+                "cycle_report": {
+                    "cycle_id": cycle_s.get("cycle_id", "—"),
+                    "success_count": cycle_s.get("success_count", 0),
+                    "failed_count": cycle_s.get("failed_count", 0),
+                    "duration": cycle_s.get("duration", 0)
+                },
+                "history": activities
+            })
+
         if path == "/api/logs":
-            # Trả về lịch sử log chi tiết ánh xạ luồng gửi từ STATE hoặc Redis
-            history = STATE.get("sched", {}).get("history", [])
-            return self._reply(200, {"ok": True, "history": history})
+            # Trả về log thực tế từ STATE["activity"]
+            activities = STATE.get("activity", [])
+            return self._reply(200, {"ok": True, "history": activities})
 
         if path in ("/dashboard", "/", "/index.html"):
             cur_dir = os.path.dirname(__file__)
@@ -678,6 +961,180 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
+        # Thêm endpoint POST /api/ingestion/run cho Cloud Scheduler (Đã chuẩn hóa Security Fail-Closed & Distributed TTL Lock)
+        if path == "/api/ingestion/run":
+            # 1. SECURITY FAIL-CLOSED: BẮT BUỘC có SCHEDULER_SECRET từ environment, KHÔNG hardcode default.
+            # CHỈ DÙNG X-Scheduler-Secret với hmac.compare_digest. Xóa hoàn toàn Bearer / OIDC giả định.
+            import hmac
+            expected_secret = os.environ.get("SCHEDULER_SECRET")
+            if not expected_secret:
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ❌ [SECURITY] SCHEDULER_SECRET environment variable is missing. Fail-closed rejection.", flush=True)
+                return self._reply(403, {"ok": False, "error_stage": "LOCK", "error": "Server security misconfigured: SCHEDULER_SECRET is not set"})
+
+            x_scheduler_secret = self.headers.get("X-Scheduler-Secret", "")
+            
+            authorized = False
+            if x_scheduler_secret and hmac.compare_digest(x_scheduler_secret.encode("utf-8"), expected_secret.encode("utf-8")):
+                authorized = True
+
+            if not authorized:
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 🚫 [SECURITY] Unauthorized ingestion attempt (Invalid or missing X-Scheduler-Secret). Rejecting with 401.", flush=True)
+                return self._reply(401, {"ok": False, "error_stage": "LOCK", "error": "Unauthorized: Invalid or missing X-Scheduler-Secret header"})
+
+            print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 📥 [INGESTION] INGESTION_REQUEST_RECEIVED (Authenticated successfully)", flush=True)
+
+            # 2. SINGLE-INSTANCE THREAD LOCK (_scrape_lock = threading.Lock)
+            # Cloud Run max instances = 1, chống hai request đồng thời trong cùng instance.
+            global _scrape_lock
+            if not '_scrape_lock' in globals():
+                _scrape_lock = threading.Lock()
+
+            if not _scrape_lock.acquire(blocking=False):
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ⚠️ [INGESTION] INGESTION_LOCK_ACQUIRED -> FAILED (Locked)", flush=True)
+                return self._reply(429, {"ok": False, "error_stage": "LOCK", "error": "Đang có tiến trình ingestion khác thực thi trên instance này"})
+
+            run_id = f"ING-{uuid.uuid4().hex[:8]}"
+            t_start = time.time()
+            try:
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 🔒 [{run_id}] INGESTION_LOCK_ACQUIRED", flush=True)
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 🔒 [{run_id}] INGESTION_LOCK_ACQUIRED (TTL 300s)", flush=True)
+                _log_activity("INGESTION", "START", f"[{run_id}] Bắt đầu chu trình Ingestion tự động")
+
+                # 3. Crawler Start & Execute
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 🚀 [{run_id}] CRAWLER_START", flush=True)
+                ctp_dir = os.path.join(os.path.dirname(__file__), "Cao_Ton_Phieu")
+                if ctp_dir not in sys.path:
+                    sys.path.insert(0, ctp_dir)
+                import cao_ton_phieu as ctp
+
+                buu_cuc, tickets, meta = ctp.login_and_scrape_v2()
+                if not tickets or len(tickets) == 0:
+                    raise RuntimeError("Crawler trả về 0 ticket (Dữ liệu rỗng hoặc lỗi API nguồn)")
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ✅ [{run_id}] CRAWLER_SUCCESS ({len(tickets)} tickets, {len(buu_cuc)} bưu cục)", flush=True)
+
+                # 4. Sheet Write Start & Execute (Fail-closed: crawler fail -> không chạy phần này)
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 📊 [{run_id}] SHEET_WRITE_START", flush=True)
+                svc = get_sheets_service()
+                co_cau = ctp.load_co_cau_map(svc)
+                name_of = {b.get("value"): b.get("label") for b in buu_cuc}
+
+                cnt_map = {}
+                for t in tickets:
+                    bc = t.get("ma_buu_cuc", "")
+                    loai = t.get("loai", "")
+                    if bc not in cnt_map:
+                        cnt_map[bc] = [0, 0, 0]
+                    if loai == "Hối giao":
+                        cnt_map[bc][0] += 1
+                    elif loai == "Hối lấy":
+                        cnt_map[bc][1] += 1
+                    elif loai == "Hối trả":
+                        cnt_map[bc][2] += 1
+
+                au = meta.get("updated_at", _now().strftime("%Y-%m-%d %H:%M:%S"))
+                snapshot_id = f"SNAP-{_now().strftime('%Y%m%d-%H%M')}"
+
+                # Ghi tab Ton_phieu
+                ctp.ensure_tab(svc, ctp.TAB_TON)
+                rows_ton = [["ma_buu_cuc", "ten_buu_cuc", "Hối giao", "Hối lấy", "Hối trả", "Tổng", "Tiền phạt", "cap_nhat_luc"]]
+                for b in buu_cuc:
+                    bc = b.get("value")
+                    c = cnt_map.get(bc, [0, 0, 0])
+                    rows_ton.append([
+                        bc, name_of.get(bc, b.get("label")), c[0], c[1], c[2],
+                        b.get("total"), b.get("penalty"), au
+                    ])
+                ctp.write_tab(svc, ctp.TAB_TON, rows_ton)
+
+                # Ghi tab Chi_tiet
+                ctp.ensure_tab(svc, ctp.TAB_CT)
+                rows_ct = [[
+                    "ma_buu_cuc", "ten_buu_cuc", "ma_ticket", "ma_don", "loai_phieu", "tien_phat",
+                    "hạn_đóng", "trạng_thái", "url", "gdv_pgdv_id", "gdv_pgdv_name",
+                    "area_manager_id", "area_manager_name", "region_shortname"
+                ]]
+                for t in tickets:
+                    bc = str(t.get("ma_buu_cuc", ""))
+                    cc_info = co_cau.get(bc, ("", "", "", "", ""))
+                    rows_ct.append([
+                        t.get("ma_buu_cuc"), t.get("ten_buu_cuc"), t.get("ma_ticket"), t.get("ma_don"),
+                        t.get("loai"), t.get("tien_phat"), t.get("han_dong"), t.get("trang_thai"),
+                        t.get("url"), cc_info[0], cc_info[1], cc_info[2], cc_info[3], cc_info[4]
+                    ])
+                ctp.write_tab(svc, ctp.TAB_CT, rows_ct)
+
+                # Ghi RP_theo_AM
+                try:
+                    ctp.ghi_rp_theo_am(svc, co_cau)
+                except Exception as e_am:
+                    print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] [WARN] Lỗi ghi RP_theo_AM: {e_am}", flush=True)
+
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ✅ [{run_id}] SHEET_WRITE_SUCCESS (snapshot_id={snapshot_id}, cap_nhat_luc={au})", flush=True)
+
+                # 5. Dashboard Build & Cloudflare Deploy (Fail-closed: Sheet write fail -> không deploy)
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 🌐 [{run_id}] DASHBOARD_BUILD_START", flush=True)
+                dashboard_deployed = False
+                cf_deployment_id = "—"
+                try:
+                    import dashboard_sync as dsync
+                    cached_data = {
+                        "hdr": rows_ct[0],
+                        "rows": rows_ct[1:],
+                        "ci": {h: i for i, h in enumerate(rows_ct[0])}
+                    }
+                    raw_data = dsync._build_raw(cached_data)
+                    cf_deployment_id = dsync._deploy_to_cloudflare(raw_data)
+                    dashboard_deployed = True
+                    print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ✅ [{run_id}] CLOUDFLARE_DEPLOY_SUCCESS (ID: {cf_deployment_id})", flush=True)
+                except Exception as e_ds:
+                    print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ❌ [{run_id}] DASHBOARD_BUILD / DEPLOY FAILED: {e_ds}", flush=True)
+                    _log_activity("INGESTION", "PARTIAL", f"[{run_id}] Ingestion thành công Sheet nhưng deploy dashboard lỗi: {e_ds}")
+                    dur = round(time.time() - t_start, 2)
+                    return self._reply(500, {
+                        "ok": False,
+                        "error_stage": "CLOUDFLARE_DEPLOY",
+                        "error": str(e_ds),
+                        "snapshot_id": snapshot_id,
+                        "cap_nhat_luc": au,
+                        "ticket_count": len(tickets),
+                        "warehouse_count": len(buu_cuc),
+                        "duration_seconds": dur
+                    })
+
+                dur = round(time.time() - t_start, 2)
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 🎉 [{run_id}] INGESTION_SUCCESS in {dur}s", flush=True)
+                _log_activity("INGESTION", "SUCCESS", f"[{run_id}] Ingestion hoàn tất: {len(tickets)} tickets, {len(buu_cuc)} bưu cục, CF deploy ID: {cf_deployment_id}")
+
+                return self._reply(200, {
+                    "ok": True,
+                    "snapshot_id": snapshot_id,
+                    "cap_nhat_luc": au,
+                    "ticket_count": len(tickets),
+                    "warehouse_count": len(buu_cuc),
+                    "dashboard_deployed": dashboard_deployed,
+                    "cloudflare_deployment_id": cf_deployment_id,
+                    "duration_seconds": dur
+                })
+
+            except Exception as ex:
+                dur = round(time.time() - t_start, 2)
+                err_stage = "CRAWLER"
+                if "Sheet" in str(ex) or "google" in str(ex).lower():
+                    err_stage = "SHEET_WRITE"
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ❌ [{run_id}] INGESTION FAILED at stage {err_stage}: {ex}", flush=True)
+                _log_activity("INGESTION", "FAILED", f"[{run_id}] Lỗi ingestion ({err_stage}): {ex}")
+                return self._reply(500, {
+                    "ok": False,
+                    "error_stage": err_stage,
+                    "error": str(ex),
+                    "duration_seconds": dur
+                })
+            finally:
+                try:
+                    _scrape_lock.release()
+                except Exception:
+                    pass
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 🔓 [{run_id}] INGESTION_LOCK_RELEASED", flush=True)
         # Cloud Scheduler gọi kích hoạt chu trình cào + gửi tin
         if path in ("/api/cycle/run", "/api/scrape_and_send"):
             qs = parse_qs(parsed.query)
@@ -706,12 +1163,79 @@ def run_server(port=8080):
                 # Chạy đúng phút 00 của các giờ trong khung 6h-18h và chưa chạy trong giờ đó
                 if 6 <= hour <= 18 and minute == 0 and hour != last_run_hour:
                     filter_type = "ALL" if hour <= 13 else "HOI_LAY"
-                    print(f"⏰ [Scheduler] Tự động kích hoạt chu trình: {filter_type} lúc {now_dt.strftime('%Y-%m-%d %H:%M:%S')}", flush=True)
+                    print(f"⏰ [Scheduler] Tự động kích hoạt chu trình cào + gửi: {filter_type} lúc {now_dt.strftime('%Y-%m-%d %H:%M:%S')}", flush=True)
                     try:
+                        # BƯỚC 1: Thực thi cào dữ liệu mới từ GHN Vận hành và ghi Raw Snapshot vào Google Sheet
+                        print(f"[{now_dt.strftime('%H:%M:%S')}] 🔄 [Scheduler] Bắt đầu cào dữ liệu tự động trước khi gửi tin...", flush=True)
+                        ctp_dir = os.path.join(os.path.dirname(__file__), "Cao_Ton_Phieu")
+                        if ctp_dir not in sys.path:
+                            sys.path.insert(0, ctp_dir)
+                        import cao_ton_phieu as ctp
+                            
+                        buu_cuc, tickets, meta = ctp.login_and_scrape_v2()
+                        svc = get_sheets_service()
+                        co_cau = ctp.load_co_cau_map(svc)
+                        name_of = {b.get("value"): b.get("label") for b in buu_cuc}
+
+                        cnt_map = {}
+                        for t in tickets:
+                            bc = t.get("ma_buu_cuc", "")
+                            loai = t.get("loai", "")
+                            if bc not in cnt_map:
+                                cnt_map[bc] = [0, 0, 0]
+                            if loai == "Hối giao":
+                                cnt_map[bc][0] += 1
+                            elif loai == "Hối lấy":
+                                cnt_map[bc][1] += 1
+                            elif loai == "Hối trả":
+                                cnt_map[bc][2] += 1
+
+                        au = meta.get("updated_at", now_dt.strftime("%Y-%m-%d %H:%M:%S"))
+
+                        # Ghi tab Ton_phieu
+                        ctp.ensure_tab(svc, ctp.TAB_TON)
+                        rows_ton = [["ma_buu_cuc", "ten_buu_cuc", "Hối giao", "Hối lấy", "Hối trả", "Tổng", "Tiền phạt", "cap_nhat_luc"]]
+                        for b in buu_cuc:
+                            bc = b.get("value")
+                            c = cnt_map.get(bc, [0, 0, 0])
+                            rows_ton.append([
+                                bc, name_of.get(bc, b.get("label")), c[0], c[1], c[2],
+                                b.get("total"), b.get("penalty"), au
+                            ])
+                        ctp.write_tab(svc, ctp.TAB_TON, rows_ton)
+
+                        # Ghi tab Chi_tiet
+                        ctp.ensure_tab(svc, ctp.TAB_CT)
+                        rows_ct = [[
+                            "ma_buu_cuc", "ten_buu_cuc", "ma_ticket", "ma_don", "loai_phieu", "tien_phat",
+                            "hạn_đóng", "trạng_thái", "url", "gdv_pgdv_id", "gdv_pgdv_name",
+                            "area_manager_id", "area_manager_name", "region_shortname"
+                        ]]
+                        for t in tickets:
+                            bc = str(t.get("ma_buu_cuc", ""))
+                            cc_info = co_cau.get(bc, ("", "", "", "", ""))
+                            rows_ct.append([
+                                t.get("ma_buu_cuc"), t.get("ten_buu_cuc"), t.get("ma_ticket"), t.get("ma_don"),
+                                t.get("loai"), t.get("tien_phat"), t.get("han_dong"), t.get("trang_thai"),
+                                t.get("url"), cc_info[0], cc_info[1], cc_info[2], cc_info[3], cc_info[4]
+                            ])
+                        ctp.write_tab(svc, ctp.TAB_CT, rows_ct)
+                            
+                        # Ghi RP_theo_AM
+                        try:
+                            ctp.ghi_rp_theo_am(svc, co_cau)
+                        except Exception as e_am:
+                            print(f"[WARN] Lỗi ghi RP_theo_AM: {e_am}", flush=True)
+
+                        _log_activity("AUTO_SCRAPE", "SUCCESS", f"Tự động cào thành công {len(buu_cuc)} BC, {len(tickets)} tickets lúc {au}")
+                        print(f"[{now_dt.strftime('%H:%M:%S')}] ✅ [Scheduler] Cào dữ liệu thành công! Tiến hành chạy chu trình gửi tin...", flush=True)
+
+                        # BƯỚC 2: Chạy chu trình đọc Sheet mới và gửi tin / báo cáo
                         run_dispatch_cycle(filter_type=filter_type, send_to="ALL", dry_run=False)
                         last_run_hour = hour
                     except Exception as ex:
-                        print(f"❌ [Scheduler Error] Lỗi khi chạy chu kỳ {filter_type}: {ex}", flush=True)
+                        _log_activity("AUTO_SCRAPE", "FAILED", f"Lỗi cào tự động lúc {hour}h: {ex}")
+                        print(f"❌ [Scheduler Error] Lỗi khi chạy chu kỳ cào + gửi {filter_type}: {ex}", flush=True)
             except Exception as e:
                 print(f"❌ [Scheduler Loop Error]: {e}", flush=True)
             time.sleep(30) # Kiểm tra mỗi 30 giây
