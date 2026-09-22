@@ -1146,6 +1146,44 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
             res = run_dispatch_cycle(filter_type=filter_type, send_to=send_to, dry_run=dry_run)
             return self._reply(200, res)
 
+        # POST /api/dashboard/deploy — Deploy snapshot Sheet hiện tại lên Cloudflare Pages
+        # KHÔNG chạy crawler, chỉ đọc Chi_tiet tab và deploy CF.
+        # Auth: X-Scheduler-Secret (dùng chung với ingestion secret)
+        if path == "/api/dashboard/deploy":
+            import hmac as _hmac
+            _exp_sec = os.environ.get("SCHEDULER_SECRET")
+            if not _exp_sec:
+                return self._reply(500, {"error": "SCHEDULER_SECRET not configured"})
+            _recv_sec = self.headers.get("X-Scheduler-Secret", "")
+            if not _hmac.compare_digest(_recv_sec, _exp_sec):
+                return self._reply(403, {"error": "FORBIDDEN"})
+            try:
+                import dashboard_sync as dsync
+                # Đọc Chi_tiet từ Google Sheet (không crawl)
+                _svc = get_sheets_service()
+                _res = _svc.spreadsheets().values().get(
+                    spreadsheetId=SHEET_ID, range="'Chi_tiet'!A:ZZ"
+                ).execute()
+                _vals = _res.get("values", [])
+                _hdr  = _vals[0] if _vals else []
+                _rows = _vals[1:] if len(_vals) > 1 else []
+                cached = {
+                    "hdr": _hdr,
+                    "rows": _rows,
+                    "ci": {h: i for i, h in enumerate(_hdr)},
+                }
+                raw_data = dsync._build_raw(cached)
+                cf_id = dsync._deploy_to_cloudflare(raw_data)
+                _log_activity("DASHBOARD_DEPLOY", "SUCCESS", f"Manual deploy CF ID: {cf_id}")
+                return self._reply(200, {
+                    "ok": True,
+                    "cloudflare_deployment_id": cf_id,
+                    "ticket_count": len(_rows),
+                })
+            except Exception as _e_dd:
+                _log_activity("DASHBOARD_DEPLOY", "FAILED", str(_e_dd))
+                return self._reply(500, {"ok": False, "error": str(_e_dd)})
+
         self._reply(404, {"error": "Endpoint Not Found"})
 
 def run_server(port=8080):
