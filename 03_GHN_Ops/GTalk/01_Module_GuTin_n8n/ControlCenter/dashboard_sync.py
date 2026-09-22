@@ -244,13 +244,13 @@ def _deploy_to_cloudflare(html_content: str) -> str:
 
     # ── Step 4: POST deployments — multipart/form-data ────────────────────
     # Official: Content-Type multipart/form-data
-    # manifest: JSON string mapping file paths → hashes (path KHÔNG có leading slash
-    #           theo curl example trong docs: {"index.html": "abc123"})
+    # manifest: JSON string mapping file paths → hashes
+    # Dùng files= để requests gửi đúng multipart/form-data (không phải url-encoded)
     manifest_str = json.dumps({"index.html": asset_hash})
     r4 = requests.post(
         f"{CF_BASE_URL}/accounts/{account_id}/pages/projects/{CF_PROJECT_NAME}/deployments",
         headers=api_auth,
-        data={"manifest": manifest_str},   # multipart/form-data (requests mặc định khi dùng data= với files=None)
+        files={"manifest": (None, manifest_str, "text/plain")},
         timeout=60,
     )
     if not r4.ok:
