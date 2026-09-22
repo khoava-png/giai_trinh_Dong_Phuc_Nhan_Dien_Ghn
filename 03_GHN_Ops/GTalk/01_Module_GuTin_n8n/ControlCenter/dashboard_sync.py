@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 dashboard_sync.py — Build HTML từ cached_data và deploy lên Cloudflare Pages
-bằng Direct Upload API (không cần wrangler CLI).
+bằng Direct Upload API 4 bước (không cần wrangler CLI, không cần Node).
 
 Được gọi từ control_center.py sau khi Sheet write thành công:
     raw_data = dsync._build_raw(cached_data)
@@ -15,9 +15,15 @@ Env vars bắt buộc (Cloud Run):
 Env var tùy chọn:
     CF_PROJECT_NAME — tên Pages project (default: ghn-dashboard)
     DASHBOARD_TEMPLATE_PATH — đường dẫn tuyệt đối tới dashboard/index.html
-                              (default: <thư mục app>/dashboard/index.html)
+
+Flow 4 bước (Cloudflare Pages Direct Upload):
+    1. POST /accounts/{id}/pages/projects/{name}/upload-token  → JWT
+    2. POST /pages/assets/upload                                → upload file (dùng JWT)
+    3. POST /pages/assets/upsert-hashes                         → confirm hash (dùng JWT)
+    4. POST /accounts/{id}/pages/projects/{name}/deployments    → tạo deployment
 """
 
+import base64
 import io
 import json
 import os
@@ -29,10 +35,38 @@ import requests
 
 # ── Constants ──────────────────────────────────────────────────────────────
 CF_PROJECT_NAME = os.environ.get("CF_PROJECT_NAME", "ghn-dashboard")
+CF_BASE_URL = "https://api.cloudflare.com/client/v4"
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 _DEFAULT_TEMPLATE = os.path.join(_BASE_DIR, "dashboard", "index.html")
 DASHBOARD_TEMPLATE_PATH = os.environ.get("DASHBOARD_TEMPLATE_PATH", _DEFAULT_TEMPLATE)
+
+
+# ── Cloudflare asset hash (BLAKE3 của base64 bytes + extension) ─────────────
+
+def _cf_asset_hash(data: bytes, rel_path: str) -> str:
+    """
+    Tính hash Cloudflare Pages theo định dạng wrangler:
+        blake3( base64(file_bytes) + extension_without_dot ).hex()[:32]
+    Cần package `blake3` (pip install blake3).
+    """
+    try:
+        import blake3 as blake3_lib
+        _blake3_available = True
+    except ImportError:
+        _blake3_available = False
+
+    ext = os.path.splitext(rel_path)[1][1:]  # "index.html" → "html"
+    b64_bytes = base64.b64encode(data)        # bytes
+    payload = b64_bytes + ext.encode("ascii")
+
+    if _blake3_available:
+        import blake3 as blake3_lib
+        return blake3_lib.blake3(payload).hexdigest()[:32]
+    else:
+        # Fallback: SHA-256 (sẽ deploy được nhưng asset có thể 404 — chỉ dùng khi blake3 chưa install)
+        import hashlib
+        return hashlib.sha256(payload).hexdigest()[:32]
 
 
 # ── Internal helpers ────────────────────────────────────────────────────────
@@ -40,7 +74,7 @@ DASHBOARD_TEMPLATE_PATH = os.environ.get("DASHBOARD_TEMPLATE_PATH", _DEFAULT_TEM
 def _check_credentials():
     """Xác minh CF_ACCOUNT_ID và CF_API_TOKEN hiện diện (không in giá trị)."""
     account_id = os.environ.get("CF_ACCOUNT_ID", "")
-    api_token = os.environ.get("CF_API_TOKEN", "")
+    api_token  = os.environ.get("CF_API_TOKEN", "")
     if not account_id:
         raise EnvironmentError("CF_ACCOUNT_ID chưa được set trong environment.")
     if not api_token:
@@ -55,7 +89,7 @@ def _build_raw(cached_data: dict) -> str:
 
     Trả về: chuỗi HTML hoàn chỉnh đã nhúng data mới.
     """
-    hdr = cached_data.get("hdr", [])
+    hdr  = cached_data.get("hdr", [])
     rows = cached_data.get("rows", [])
 
     def ci(name):
@@ -81,7 +115,7 @@ def _build_raw(cached_data: dict) -> str:
     i_am   = ci("area_manager_name")
     i_vung = ci("region_shortname")
 
-    tickets = []
+    tickets    = []
     total_phat = 0
     for row in rows:
         try:
@@ -89,11 +123,8 @@ def _build_raw(cached_data: dict) -> str:
         except Exception:
             phat = 0
         total_phat += phat
-        bc   = g(row, i_bc)
-        vung = g(row, i_vung)
-        am   = g(row, i_am)
         tickets.append({
-            "bc":    bc,
+            "bc":    g(row, i_bc),
             "bl":    g(row, i_bl),
             "tk":    g(row, i_tk),
             "don":   g(row, i_don),
@@ -104,19 +135,19 @@ def _build_raw(cached_data: dict) -> str:
             "url":   g(row, i_url),
             "gdv":   g(row, i_gdv),
             "am_id": g(row, i_amid),
-            "am":    am,
-            "vung":  vung,
+            "am":    g(row, i_am),
+            "vung":  g(row, i_vung),
         })
 
-    now_str  = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    regions  = sorted({t["vung"] for t in tickets if t["vung"]})
-    am_list  = sorted({t["am"]   for t in tickets if t["am"]})
+    now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    regions = sorted({t["vung"] for t in tickets if t["vung"]})
+    am_list = sorted({t["am"]   for t in tickets if t["am"]})
 
     raw_obj = {
         "updated":    now_str,
         "tickets":    tickets,
-        "bcs":        [],   # bưu cục summary — không có trong cached_data, bỏ qua
-        "ams":        [],   # AM summary      — không có trong cached_data, bỏ qua
+        "bcs":        [],
+        "ams":        [],
         "total":      len(tickets),
         "total_phat": total_phat,
         "regions":    regions,
@@ -145,63 +176,111 @@ def _build_raw(cached_data: dict) -> str:
 
 def _deploy_to_cloudflare(html_content: str) -> str:
     """
-    Deploy HTML lên Cloudflare Pages bằng Direct Upload API.
+    Deploy HTML lên Cloudflare Pages bằng Direct Upload API 4 bước.
 
-    Endpoint:
-      POST /accounts/{account_id}/pages/projects/{project_name}/deployments
-
-    Payload: multipart/form-data với file manifest.json + index.html trong zip
+    Bước 1: Lấy upload JWT từ upload-token endpoint.
+    Bước 2: Upload file index.html (multipart, dùng JWT).
+    Bước 3: Upsert-hashes để Cloudflare confirm (dùng JWT).
+    Bước 4: Tạo deployment với manifest (dùng API token).
 
     Trả về: deployment ID thật (string).
-    Nếu API lỗi: raise Exception với status + response body để debug.
+    Nếu API lỗi: raise Exception với status + response body để debug (rule #8).
     """
     account_id, api_token = _check_credentials()
 
-    # Bước 1: Tạo upload session (lấy upload_url + jwt)
-    # Cloudflare Pages Direct Upload dùng form-data multipart với "file" là zip
-    url_deploy = (
-        f"https://api.cloudflare.com/client/v4"
-        f"/accounts/{account_id}/pages/projects/{CF_PROJECT_NAME}/deployments"
-    )
-    headers = {
-        "Authorization": f"Bearer {api_token}",
-    }
+    file_data    = html_content.encode("utf-8")
+    rel_path     = "index.html"
+    asset_hash   = _cf_asset_hash(file_data, rel_path)
+    b64_content  = base64.b64encode(file_data).decode("ascii")
 
-    # Đóng gói index.html thành zip (Cloudflare Pages Direct Upload yêu cầu zip)
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr("index.html", html_content.encode("utf-8"))
-    zip_bytes = zip_buffer.getvalue()
+    auth_headers = {"Authorization": f"Bearer {api_token}"}
 
-    # Multipart: field "file" = zip archive
-    files_payload = {
-        "file": ("pages.zip", zip_bytes, "application/zip"),
-    }
+    # ── Bước 1: Lấy upload JWT ─────────────────────────────────────────────
+    url_token = f"{CF_BASE_URL}/accounts/{account_id}/pages/projects/{CF_PROJECT_NAME}/upload-token"
+    r1 = requests.post(url_token, headers=auth_headers, timeout=30)
+    if not r1.ok:
+        raise RuntimeError(
+            f"CF_UPLOAD_TOKEN_ERROR status={r1.status_code} body={r1.text}"
+        )
+    r1_json = r1.json()
+    if not r1_json.get("success"):
+        raise RuntimeError(
+            f"CF_UPLOAD_TOKEN_FAILED errors={r1_json.get('errors')} body={r1.text}"
+        )
+    jwt = r1_json["result"]["jwt"]
+    jwt_headers = {"Authorization": f"Bearer {jwt}"}
 
-    resp = requests.post(
-        url_deploy,
-        headers=headers,
-        files=files_payload,
+    # ── Bước 2: Upload file (multipart JSON, không phải form) ──────────────
+    # Cloudflare Pages asset upload nhận JSON array của {key, value, metadata.contentType}
+    url_upload = f"{CF_BASE_URL}/pages/assets/upload"
+    upload_payload = [
+        {
+            "key":   asset_hash,
+            "value": b64_content,
+            "metadata": {"contentType": "text/html; charset=UTF-8"},
+            "base64": True,
+        }
+    ]
+    r2 = requests.post(
+        url_upload,
+        headers={**jwt_headers, "Content-Type": "application/json"},
+        json=upload_payload,
         timeout=120,
     )
-
-    # Giữ nguyên HTTP status + body để debug nếu lỗi (rule #8)
-    if not resp.ok:
+    if not r2.ok:
         raise RuntimeError(
-            f"CLOUDFLARE_API_ERROR status={resp.status_code} body={resp.text}"
+            f"CF_ASSET_UPLOAD_ERROR status={r2.status_code} body={r2.text}"
+        )
+    r2_json = r2.json()
+    if not r2_json.get("success"):
+        raise RuntimeError(
+            f"CF_ASSET_UPLOAD_FAILED errors={r2_json.get('errors')} body={r2.text}"
         )
 
-    resp_json = resp.json()
-    if not resp_json.get("success"):
-        errors = resp_json.get("errors", [])
+    # ── Bước 3: Upsert-hashes (confirm Cloudflare đã nhận) ─────────────────
+    url_hashes = f"{CF_BASE_URL}/pages/assets/upsert-hashes"
+    r3 = requests.post(
+        url_hashes,
+        headers={**jwt_headers, "Content-Type": "application/json"},
+        json={"hashes": [asset_hash]},
+        timeout=30,
+    )
+    if not r3.ok:
         raise RuntimeError(
-            f"CLOUDFLARE_API_FAILED success=False errors={errors} body={resp.text}"
+            f"CF_UPSERT_HASHES_ERROR status={r3.status_code} body={r3.text}"
+        )
+    r3_json = r3.json()
+    if not r3_json.get("success"):
+        raise RuntimeError(
+            f"CF_UPSERT_HASHES_FAILED errors={r3_json.get('errors')} body={r3.text}"
         )
 
-    deployment_id = resp_json["result"].get("id", "")
+    # ── Bước 4: Tạo deployment với manifest ───────────────────────────────
+    url_deploy = (
+        f"{CF_BASE_URL}/accounts/{account_id}"
+        f"/pages/projects/{CF_PROJECT_NAME}/deployments"
+    )
+    manifest = {f"/{rel_path}": asset_hash}
+    r4 = requests.post(
+        url_deploy,
+        headers={**auth_headers, "Content-Type": "application/json"},
+        json={"manifest": manifest},
+        timeout=60,
+    )
+    if not r4.ok:
+        raise RuntimeError(
+            f"CF_DEPLOY_ERROR status={r4.status_code} body={r4.text}"
+        )
+    r4_json = r4.json()
+    if not r4_json.get("success"):
+        raise RuntimeError(
+            f"CF_DEPLOY_FAILED errors={r4_json.get('errors')} body={r4.text}"
+        )
+
+    deployment_id = r4_json["result"].get("id", "")
     if not deployment_id:
         raise RuntimeError(
-            f"CLOUDFLARE_API_NO_ID result={resp_json.get('result')}"
+            f"CF_DEPLOY_NO_ID result={r4_json.get('result')}"
         )
 
     return deployment_id

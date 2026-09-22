@@ -2,3 +2,4 @@ requests>=2.31.0
 google-auth>=2.20.0
 google-api-python-client>=2.100.0
 python-dotenv>=1.0.0
+blake3>=0.4.1
