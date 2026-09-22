@@ -1192,7 +1192,6 @@ def run_server(port=8080):
     # - Từ 14:00 đến 18:00: Chạy filter=HOI_LAY
     def _bg_scheduler_loop():
         last_run_hour = -1
-        print("🟢 [Internal Background Scheduler] Đã khởi động luồng canh giờ tự động (6h-13h ALL, 14h-18h HOI_LAY)...", flush=True)
         while True:
             try:
                 now_dt = datetime.datetime.now(zoneinfo.ZoneInfo("Asia/Ho_Chi_Minh"))
@@ -1279,8 +1278,12 @@ def run_server(port=8080):
                 print(f"❌ [Scheduler Loop Error]: {e}", flush=True)
             time.sleep(30) # Kiểm tra mỗi 30 giây
 
-    sched_thread = threading.Thread(target=_bg_scheduler_loop, daemon=True)
-    sched_thread.start()
+    if os.environ.get("AUTO_SCHEDULER", "true").strip().lower() not in ("false", "0", "no"):
+        sched_thread = threading.Thread(target=_bg_scheduler_loop, daemon=True)
+        sched_thread.start()
+        print("🟢 [Internal Background Scheduler] Đã khởi động luồng canh giờ tự động (6h-13h ALL, 14h-18h HOI_LAY)...", flush=True)
+    else:
+        print("⏸ [Internal Background Scheduler] ĐÃ TẮT — AUTO_SCHEDULER=false. Dùng Cloud Scheduler.", flush=True)
 
     server_address = ("", port)
     httpd = ThreadingHTTPServer(server_address, ControlCenterHandler)
