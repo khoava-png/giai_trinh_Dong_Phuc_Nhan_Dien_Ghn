@@ -552,7 +552,7 @@ def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
     def _fetch_data(svc):
         return svc.spreadsheets().values().batchGet(
             spreadsheetId=SHEET_ID,
-            ranges=["Chi_tiet!A1:N", "Co_Cau!S3:W30"]
+            ranges=["Chi_tiet!A1:N", "Co_Cau!A:J", "Co_Cau!S3:W30"]
         ).execute()
 
     try:
@@ -564,7 +564,7 @@ def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
 
     val_ranges = resp.get("valueRanges", [])
     ct_vals = val_ranges[0].get("values", [])
-    cc_vals = val_ranges[1].get("values", []) if len(val_ranges) > 1 else []
+    tl_vals = val_ranges[2].get("values", []) if len(val_ranges) > 2 else []
 
     if len(ct_vals) <= 1:
         _log_activity("CYCLE_RUN", "FAILED", f"[{cycle_id}] Không có dữ liệu trong Chi_tiet")
@@ -577,7 +577,7 @@ def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
     t_filter_start = time.time()
     tro_ly_map = defaultdict(list)
     curr_vung = ""
-    for r in cc_vals:
+    for r in tl_vals:
         if len(r) >= 5:
             vung = r[0].strip().upper()
             if vung:
@@ -1058,7 +1058,7 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                     bc = str(t.get("ma_buu_cuc", ""))
                     cc_info = co_cau.get(bc, ("", "", "", "", ""))
                     rows_ct.append([
-                        t.get("ma_buu_cuc"), t.get("ten_buu_cuc"), t.get("ma_ticket"), t.get("ma_don"),
+                        t.get("ma_buu_cuc"), name_of.get(str(t.get("ma_buu_cuc", "")), ""), t.get("ma_ticket"), t.get("ma_don"),
                         t.get("loai"), t.get("tien_phat"), t.get("han_dong"), t.get("trang_thai"),
                         t.get("url"), cc_info[0], cc_info[1], cc_info[2], cc_info[3], cc_info[4]
                     ])
@@ -1253,7 +1253,7 @@ def run_server(port=8080):
                             bc = str(t.get("ma_buu_cuc", ""))
                             cc_info = co_cau.get(bc, ("", "", "", "", ""))
                             rows_ct.append([
-                                t.get("ma_buu_cuc"), t.get("ten_buu_cuc"), t.get("ma_ticket"), t.get("ma_don"),
+                                t.get("ma_buu_cuc"), name_of.get(str(t.get("ma_buu_cuc", "")), ""), t.get("ma_ticket"), t.get("ma_don"),
                                 t.get("loai"), t.get("tien_phat"), t.get("han_dong"), t.get("trang_thai"),
                                 t.get("url"), cc_info[0], cc_info[1], cc_info[2], cc_info[3], cc_info[4]
                             ])
