@@ -167,7 +167,7 @@ STATE = {
 
 # --- PERSISTENT STATE (LOCAL FALLBACK STORAGE) ---
 # NOTE: .control_center_state.json is an ephemeral/local fallback storage on Cloud Run
-# for fast restart recovery. Production truth is backed by Google Sheets (_Control_Center).
+# for fast restart recovery. Ephemeral local state only — Google Sheets sync removed.
 STATUS_FILE = os.path.join(os.path.dirname(__file__), ".control_center_state.json")
 
 def _load_persistent_state():
@@ -680,28 +680,28 @@ def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
     if not dry_run:
         send_gtalk_message(ADMIN_MA_NV, summary_msg)
 
-    # BƯỚC 6: Ghi log vào Google Sheet (_Control_Center!A83) với retry
-    t_log_start = time.time()
-    try:
-        log_row = [
-            now_dt.strftime("%Y-%m-%d %H:%M:%S"),
-            now_dt.strftime("%Y-%m-%d_%H"),
-            f"Cloud Run Cycle ({filter_type}) [{cycle_id}]",
-            "OK" if fail_count == 0 else "PARTIAL",
-            str(success_count),
-            f"Thành công {success_count}/{len(tasks)} | cred={t_cred_dur}s, read={t_read_dur}s, send={t_send_dur}s" + (f" | Lỗi: {'; '.join(sent_details[:3])}" if sent_details else "")
-        ]
-        def _append_log(svc):
-            return svc.spreadsheets().values().append(
-                spreadsheetId=SHEET_ID,
-                range="_Control_Center!A83",
-                valueInputOption="USER_ENTERED",
-                body={"values": [log_row]}
-            ).execute()
-        execute_with_sheets_retry(_append_log)
-    except Exception as e:
-        print(f"[WARN] [{cycle_id}] Không thể ghi log vào Sheet sau retry: {e}", flush=True)
-    t_log_dur = round(time.time() - t_log_start, 3)
+    # BƯỚC 6: Ghi log vào Google Sheet (_Control_Center!A83) với retry (Đã bỏ theo yêu cầu)
+    # t_log_start = time.time()
+    # try:
+    #     log_row = [
+    #         now_dt.strftime("%Y-%m-%d %H:%M:%S"),
+    #         now_dt.strftime("%Y-%m-%d_%H"),
+    #         f"Cloud Run Cycle ({filter_type}) [{cycle_id}]",
+    #         "OK" if fail_count == 0 else "PARTIAL",
+    #         str(success_count),
+    #         f"Thành công {success_count}/{len(tasks)} | cred={t_cred_dur}s, read={t_read_dur}s, send={t_send_dur}s" + (f" | Lỗi: {'; '.join(sent_details[:3])}" if sent_details else "")
+    #     ]
+    #     def _append_log(svc):
+    #         return svc.spreadsheets().values().append(
+    #             spreadsheetId=SHEET_ID,
+    #             range="_Control_Center!A83",
+    #             valueInputOption="USER_ENTERED",
+    #             body={"values": [log_row]}
+    #         ).execute()
+    #     execute_with_sheets_retry(_append_log)
+    # except Exception as e:
+    #     print(f"[WARN] [{cycle_id}] Không thể ghi log vào Sheet sau retry: {e}", flush=True)
+    t_log_dur = 0.0
 
     total_duration = round(time.time() - t_start_all, 2)
     _log_activity("CYCLE_TIMING", "INFO", f"[{cycle_id}] Timings: cred={t_cred_dur}s, read={t_read_dur}s, filter={t_filter_dur}s, send={t_send_dur}s, log={t_log_dur}s | Total: {total_duration}s")
@@ -725,14 +725,14 @@ def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
     # 2. Google Sheet State (Phân biệt Write health từ crawler/log và Read health từ Control Center)
     sheet_status = "ONLINE"
     sheet_err = None
-    try:
-        # Test Read health nhẹ từ Google Sheet
-        def _test_read(svc):
-            return svc.spreadsheets().values().get(spreadsheetId=SHEET_ID, range="_Control_Center!A1").execute()
-        execute_with_sheets_retry(_test_read)
-    except Exception as e:
-        sheet_status = "WARNING"
-        sheet_err = f"Sheet Read Error: {e}"
+    # Test Read health nhẹ từ Google Sheet đã bị gỡ bỏ theo yêu cầu
+    # try:
+    #     def _test_read(svc):
+    #         return svc.spreadsheets().values().get(spreadsheetId=SHEET_ID, range="_Control_Center!A1").execute()
+    #     execute_with_sheets_retry(_test_read)
+    # except Exception as e:
+    #     sheet_status = "WARNING"
+    #     sheet_err = f"Sheet Read Error: {e}"
 
     if fail_count > 0:
         sheet_err = (sheet_err or "") + f" | Sheet Write (Log append) warning: {fail_count} errors"
