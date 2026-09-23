@@ -1018,6 +1018,7 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                 svc = get_sheets_service()
                 co_cau = ctp.load_co_cau_map(svc)
                 name_of = {str(b.get("value", "")): b.get("label") for b in buu_cuc}
+                bc_label = {str(b.get("value", "")): b.get("label", "") for b in buu_cuc}  # map BC -> ten chinh xac
 
                 cnt_map = {}
                 for t in tickets:
@@ -1058,7 +1059,7 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                     bc = str(t.get("ma_buu_cuc", ""))
                     cc_info = co_cau.get(bc, ("", "", "", "", ""))
                     rows_ct.append([
-                        t.get("ma_buu_cuc"), name_of.get(str(t.get("ma_buu_cuc", "")), ""), t.get("ma_ticket"), t.get("ma_don"),
+                        t.get("ma_buu_cuc"), bc_label.get(str(t.get("ma_buu_cuc", "")), ""), t.get("ma_ticket"), t.get("ma_don"),
                         t.get("loai"), t.get("tien_phat"), t.get("han_dong"), t.get("trang_thai"),
                         t.get("url"), cc_info[0], cc_info[1], cc_info[2], cc_info[3], cc_info[4]
                     ])
