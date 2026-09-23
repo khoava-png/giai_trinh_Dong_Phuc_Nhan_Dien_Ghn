@@ -79,33 +79,35 @@ def _build_raw(cached_data: dict) -> str:
     hdr  = cached_data.get("hdr", [])
     rows = cached_data.get("rows", [])
 
-    def ci(name):
-        return hdr.index(name) if name in hdr else -1
+    def ci_alt(names):
+        if isinstance(names, str):
+            names = [names]
+        for n in names:
+            if n in hdr:
+                return hdr.index(n)
+        return -1
 
-    def g(row, idx):
-        if 0 <= idx < len(row) and row[idx] is not None:
-            return str(row[idx]).strip()
-        return ""
-
-    i_bc   = ci("ma_buu_cuc")
-    i_bl   = ci("ten_buu_cuc")
-    i_tk   = ci("ma_ticket")
-    i_don  = ci("ma_don")
-    i_loai = ci("loai_phieu")
-    i_phat = ci("tien_phat")
-    i_han  = ci("hạn_đóng")
-    i_tt   = ci("trạng_thái")
-    i_url  = ci("url")
-    i_gdv  = ci("gdv_pgdv_name")
-    i_amid = ci("area_manager_id")
-    i_am   = ci("area_manager_name")
-    i_vung = ci("region_shortname")
+    i_bc   = ci_alt(["ma_buu_cuc", "buu_cuc"])
+    i_bl   = ci_alt(["ten_buu_cuc", "ten_bc"])
+    i_tk   = ci_alt(["ma_ticket", "ticket"])
+    i_don  = ci_alt(["ma_don", "don"])
+    i_loai = ci_alt(["loai_phieu", "loai"])
+    i_phat = ci_alt(["tien_phat", "phat"])
+    i_han  = ci_alt(["hạn_đóng", "han_dong", "han"])
+    i_tt   = ci_alt(["trạng_thái", "trang_thai", "tt"])
+    i_url  = ci_alt(["url"])
+    i_gdv  = ci_alt(["gdv_pgdv_name", "gdv"])
+    i_amid = ci_alt(["area_manager_id", "am_id"])
+    i_am   = ci_alt(["area_manager_name", "am"])
+    i_vung = ci_alt(["region_shortname", "vung"])
 
     tickets    = []
     total_phat = 0
     for row in rows:
         try:
-            phat = int(float(g(row, i_phat) or 0))
+            raw_phat = g(row, i_phat)
+            cleaned_phat = re.sub(r'[^\d.]', '', raw_phat)
+            phat = int(float(cleaned_phat or 0))
         except Exception:
             phat = 0
         total_phat += phat
