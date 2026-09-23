@@ -1017,7 +1017,7 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                 print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 📊 [{run_id}] SHEET_WRITE_START", flush=True)
                 svc = get_sheets_service()
                 co_cau = ctp.load_co_cau_map(svc)
-                name_of = {b.get("value"): b.get("label") for b in buu_cuc}
+                name_of = {str(b.get("value", "")): b.get("label") for b in buu_cuc}
 
                 cnt_map = {}
                 for t in tickets:
@@ -1213,7 +1213,7 @@ def run_server(port=8080):
                         buu_cuc, tickets, meta = ctp.login_and_scrape_v2()
                         svc = get_sheets_service()
                         co_cau = ctp.load_co_cau_map(svc)
-                        name_of = {b.get("value"): b.get("label") for b in buu_cuc}
+                        name_of = {str(b.get("value", "")): b.get("label") for b in buu_cuc}
 
                         cnt_map = {}
                         for t in tickets:
