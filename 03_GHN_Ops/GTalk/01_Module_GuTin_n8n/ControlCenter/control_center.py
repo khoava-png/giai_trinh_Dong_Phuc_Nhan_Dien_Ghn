@@ -1054,16 +1054,6 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                     "hạn_đóng", "trạng_thái", "url", "gdv_pgdv_id", "gdv_pgdv_name",
                     "area_manager_id", "area_manager_name", "region_shortname"
                 ]]
-                # DEBUG: in 3 sample để kiểm tra name_of lookup
-                _debug_seen = set()
-                for _t in tickets[:50]:
-                    _bc_raw = _t.get("ma_buu_cuc")
-                    _bc_str = str(_bc_raw) if _bc_raw is not None else ""
-                    if _bc_str not in _debug_seen:
-                        _debug_seen.add(_bc_str)
-                        print(f"[DEBUG_NAME_OF] bc_raw={_bc_raw!r} type={type(_bc_raw).__name__} -> name={name_of.get(_bc_str, chr(78)+chr(79)+chr(84)+chr(95)+chr(70)+chr(79)+chr(85)+chr(78)+chr(68))!r}", flush=True)
-                    if len(_debug_seen) >= 3:
-                        break
                 for t in tickets:
                     bc = str(t.get("ma_buu_cuc", ""))
                     cc_info = co_cau.get(bc, ("", "", "", "", ""))
@@ -1076,7 +1066,7 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
 
                 # Ghi RP_theo_AM
                 try:
-                    ctp.ghi_rp_theo_am(svc, co_cau)
+                    ctp.ghi_rp_theo_am(svc, tickets, co_cau, au, name_of)
                 except Exception as e_am:
                     print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] [WARN] Lỗi ghi RP_theo_AM: {e_am}", flush=True)
 
@@ -1271,7 +1261,7 @@ def run_server(port=8080):
                             
                         # Ghi RP_theo_AM
                         try:
-                            ctp.ghi_rp_theo_am(svc, co_cau)
+                            ctp.ghi_rp_theo_am(svc, tickets, co_cau, au, name_of)
                         except Exception as e_am:
                             print(f"[WARN] Lỗi ghi RP_theo_AM: {e_am}", flush=True)
 
