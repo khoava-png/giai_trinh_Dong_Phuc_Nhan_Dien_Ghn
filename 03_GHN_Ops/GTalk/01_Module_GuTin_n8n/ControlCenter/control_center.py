@@ -1059,9 +1059,16 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                     bc = str(t.get("ma_buu_cuc", ""))
                     cc_info = co_cau.get(bc, ("", "", "", "", ""))
                     rows_ct.append([
-                        t.get("ma_buu_cuc"), bc_label.get(str(t.get("ma_buu_cuc", "")), ""), t.get("ma_ticket"), t.get("ma_don"),
-                        t.get("loai"), t.get("tien_phat"), t.get("han_dong"), t.get("trang_thai"),
-                        t.get("url"), cc_info[0], cc_info[1], cc_info[2], cc_info[3], cc_info[4]
+                        t.get("ma_buu_cuc"),                                    # ma_buu_cuc
+                        bc_label.get(bc, ""),                                   # ten_buu_cuc
+                        t.get("number", ""),                                    # ma_ticket  (API field: number)
+                        t.get("order_code", ""),                                # ma_don     (API field: order_code)
+                        t.get("loai", ""),                                      # loai_phieu
+                        t.get("penalty", 0),                                    # tien_phat  (API field: penalty)
+                        t.get("close_esc", ""),                                 # hạn_đóng   (API field: close_esc)
+                        t.get("trang_thai", ""),                                # trạng_thái
+                        t.get("url", ""),                                       # url
+                        cc_info[0], cc_info[1], cc_info[2], cc_info[3], cc_info[4]  # gdv_id, gdv_name, am_id, am_name, region
                     ])
                 ctp.write_tab(svc, ctp.TAB_CT, rows_ct)
 
@@ -1254,9 +1261,16 @@ def run_server(port=8080):
                             bc = str(t.get("ma_buu_cuc", ""))
                             cc_info = co_cau.get(bc, ("", "", "", "", ""))
                             rows_ct.append([
-                                t.get("ma_buu_cuc"), name_of.get(str(t.get("ma_buu_cuc", "")), ""), t.get("ma_ticket"), t.get("ma_don"),
-                                t.get("loai"), t.get("tien_phat"), t.get("han_dong"), t.get("trang_thai"),
-                                t.get("url"), cc_info[0], cc_info[1], cc_info[2], cc_info[3], cc_info[4]
+                                t.get("ma_buu_cuc"),
+                                name_of.get(bc, ""),
+                                t.get("number", ""),
+                                t.get("order_code", ""),
+                                t.get("loai", ""),
+                                t.get("penalty", 0),
+                                t.get("close_esc", ""),
+                                t.get("trang_thai", ""),
+                                t.get("url", ""),
+                                cc_info[0], cc_info[1], cc_info[2], cc_info[3], cc_info[4]
                             ])
                         ctp.write_tab(svc, ctp.TAB_CT, rows_ct)
                             
