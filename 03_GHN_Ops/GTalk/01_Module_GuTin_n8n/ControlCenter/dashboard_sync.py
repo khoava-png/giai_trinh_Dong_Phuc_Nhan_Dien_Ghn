@@ -87,6 +87,12 @@ def _build_raw(cached_data: dict) -> str:
                 return hdr.index(n)
         return -1
 
+    def g(row, i):
+        """Lấy giá trị an toàn từ row theo index i."""
+        if i < 0 or i >= len(row):
+            return ""
+        return str(row[i]).strip()
+
     i_bc   = ci_alt(["ma_buu_cuc", "buu_cuc"])
     i_bl   = ci_alt(["ten_buu_cuc", "ten_bc"])
     i_tk   = ci_alt(["ma_ticket", "ticket"])
