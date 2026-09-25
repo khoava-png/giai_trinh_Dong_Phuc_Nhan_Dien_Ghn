@@ -84,127 +84,24 @@ def pad_row(row, length):
 
 
 def build_dashboard_data(ch_hdr, ch_rows, t_hdr, t_rows, rp_hdr, rp_rows):
-    """Tổng hợp dữ liệu thành object RAW."""
-    def ci(h, n):
-        return h.index(n) if n in h else -1
-
-    # 1. Parse Chi_tiet
-    i_bc = ci(ch_hdr, "ma_buu_cuc")
-    i_bl = ci(ch_hdr, "ten_buu_cuc")
-    i_tk = ci(ch_hdr, "ma_ticket")
-    i_don = ci(ch_hdr, "ma_don")
-    i_loai = ci(ch_hdr, "loai_phieu")
-    i_phat = ci(ch_hdr, "tien_phat")
-    i_han = ci(ch_hdr, "hạn_đóng")
-    i_tt = ci(ch_hdr, "trạng_thái")
-    i_url = ci(ch_hdr, "url")
-    i_gdv = ci(ch_hdr, "gdv_pgdv_name")
-    i_amid = ci(ch_hdr, "area_manager_id")
-    i_am = ci(ch_hdr, "area_manager_name")
-    i_vung = ci(ch_hdr, "region_shortname")
-
-    tickets = []
-    total_phat = 0
-
-    for r in ch_rows:
-        r = pad_row(r, len(ch_hdr))
-        def g(i):
-            return r[i].strip() if 0 <= i < len(r) and r[i] is not None else ""
-
-        try:
-            phat = int(float(g(i_phat) or 0))
-        except Exception:
-            phat = 0
-        total_phat += phat
-
-        tickets.append({
-            "bc": g(i_bc),
-            "bl": g(i_bl),
-            "tk": g(i_tk),
-            "don": g(i_don),
-            "loai": g(i_loai) or "Hối giao",
-            "phat": phat,
-            "han": g(i_han),
-            "tt": g(i_tt),
-            "url": g(i_url),
-            "gdv": g(i_gdv) or "",
-            "am_id": g(i_amid),
-            "am": g(i_am),
-            "vung": g(i_vung) or ""
-        })
-
-    # 2. Parse Ton_phieu
-    tb_bc = ci(t_hdr, "ma_buu_cuc")
-    tb_bl = ci(t_hdr, "ten_buu_cuc")
-    tb_hg = ci(t_hdr, "Hối giao")
-    tb_hl = ci(t_hdr, "Hối lấy")
-    tb_ht = ci(t_hdr, "Hối trả")
-    tb_tong = ci(t_hdr, "Tổng")
-    tb_phat = ci(t_hdr, "Tiền phạt")
-    tb_cap = ci(t_hdr, "cap_nhat_luc")
-
-    bcs = []
-    for r in t_rows:
-        r = pad_row(r, len(t_hdr))
-        def g(i):
-            return r[i].strip() if 0 <= i < len(r) and r[i] is not None else ""
-        def num(i):
-            try:
-                return int(float(g(i) or 0))
-            except Exception:
-                return 0
-
-        bcs.append({
-            "bc": g(tb_bc),
-            "bl": g(tb_bl),
-            "hg": num(tb_hg),
-            "hl": num(tb_hl),
-            "ht": num(tb_ht),
-            "tong": num(tb_tong),
-            "phat": num(tb_phat),
-            "cap_nhat": g(tb_cap)
-        })
-
-    # 3. Parse RP_theo_AM
-    ra_ma = ci(rp_hdr, "Mã NV")
-    ra_ten = ci(rp_hdr, "Tên AM")
-    ra_tong = ci(rp_hdr, "Tổng phiếu")
-    ra_gap = ci(rp_hdr, "Cần xử lý ngay")
-    ra_phat = ci(rp_hdr, "Đang phát sinh phạt")
-
-    ams = []
-    for r in rp_rows:
-        r = pad_row(r, len(rp_hdr))
-        def g(i):
-            return r[i].strip() if 0 <= i < len(r) and r[i] is not None else ""
-        def num(i):
-            try:
-                return int(float(g(i) or 0))
-            except Exception:
-                return 0
-
-        ams.append({
-            "ma": g(ra_ma),
-            "ten": g(ra_ten),
-            "tong": num(ra_tong),
-            "gap": num(ra_gap),
-            "phat": num(ra_phat)
-        })
-
-    now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    regions = sorted({t["vung"] for t in tickets if t["vung"]})
-    am_list = sorted({t["am"] for t in tickets if t["am"]})
-
-    return {
-        "updated": now_str,
-        "tickets": tickets,
-        "bcs": bcs,
-        "ams": ams,
-        "total": len(tickets),
-        "total_phat": total_phat,
-        "regions": regions,
-        "am_list": am_list
+    """
+    Delegate build logic trực tiếp sang dashboard_sync._build_raw để đảm bảo
+    chỉ duy nhất 1 single source of truth cho dashboard build logic.
+    """
+    import dashboard_sync as dsync
+    cached = {
+        "hdr": ch_hdr,
+        "rows": ch_rows,
+        "ton_hdr": t_hdr,
+        "ton_rows": t_rows,
+        "source_updated_at": datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     }
+    # Validate và build
+    raw_html = dsync._build_raw(cached)
+    m = re.search(r"var RAW = (\{.*?\});", raw_html, re.DOTALL)
+    if m:
+        return json.loads(m.group(1))
+    return {}
 
 
 def replace_raw_in_html(template_html_content, data_obj):

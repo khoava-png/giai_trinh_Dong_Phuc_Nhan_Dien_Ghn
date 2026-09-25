@@ -27,6 +27,7 @@ from collections import defaultdict
 
 import requests
 import uuid
+import sso_oidc
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
@@ -38,6 +39,7 @@ AUTH_PASS = os.environ.get("AUTH_PASS", "Ghn@2026!")
 
 SHEET_ID = os.environ.get("SHEET_ID", "15Ph9h9pOf5MfvtSaqsPPb0WA0hSdeWtgByY63teiUhg")
 ADMIN_MA_NV = os.environ.get("ADMIN_MA_NV", "3049378")
+ADMIN_IDS = ["3049378", "3026736"]  # Danh sách 2 Admin bất biến nhận báo cáo giám sát Master Pipeline
 
 # Khóa Service Account Google Sheets
 KEY_FILE_PATHS = [
@@ -95,63 +97,135 @@ def _load_oa_token():
 _CHANNEL_CACHE = {}
 _CHANNEL_LOCK = threading.Lock()
 
-# Template mặc định chuẩn Markdown GTalk
+# Khóa luồng cào & pipeline dùng chung cho toàn server (Single-flight lock)
+_scrape_lock = threading.Lock()
+
+# Staged Snapshots cho quy trình Preview / Dispatch 2 giai đoạn an toàn
+_STAGED_SNAPSHOTS = {}
+_STAGED_LOCK = threading.Lock()
+_SNAPSHOT_TTL = 1800  # 30 phút TTL
+
+# Trạng thái Health Report cho Admin GTalk State Transition Alerting (RAM-only; container restart sẽ reset state)
+_LAST_HEALTH_STATE = {"status": "HEALTHY", "last_checked": 0}
+_HEALTH_LOCK = threading.Lock()
+
+def check_and_notify_api_state_transition(new_status, probe_info):
+    """
+    Hàm riêng biệt xử lý State Transition Alerting cho Admin.
+    CHỈ được gọi từ trigger chủ động (Background Watchdog hoặc Trigger Action rõ ràng).
+    TUYỆT ĐỐI không gọi ngầm từ GET /api/health/report.
+    Lưu ý: State lưu trong RAM, container restart sẽ reset state về ban đầu.
+    """
+    with _HEALTH_LOCK:
+        prev_status = _LAST_HEALTH_STATE.get("status", "HEALTHY")
+        if new_status == prev_status:
+            return False, prev_status
+
+        _LAST_HEALTH_STATE["status"] = new_status
+        _LAST_HEALTH_STATE["last_checked"] = time.time()
+
+    # Gửi alert GTalk khi có chuyển trạng thái (HEALTHY -> WARNING/FAILED hoặc ngược lại)
+    try:
+        now_str = _now().strftime("%d/%m/%Y %H:%M:%S")
+        status_icon = "🟢" if new_status == "HEALTHY" else ("🟡" if new_status == "WARNING" else "🔴")
+        transition_str = f"{prev_status} ➔ {new_status}"
+        alert_msg = (
+            f"{status_icon} *[BÁO CÁO TÌNH TRẠNG API NGUỒN]*\n"
+            f"• Trạng thái: *{transition_str}*\n"
+            f"• Thời gian: *{now_str}*\n"
+            f"• Độ trễ API: *{probe_info.get('latency_ms', 'N/A')}ms*\n"
+            f"• Tổng bưu cục: *{probe_info.get('total_buu_cuc', 'N/A')}* | Tổng phiếu web: *{probe_info.get('total_tickets_web', 'N/A')}*\n"
+            f"• Run ID: *{probe_info.get('run_id', 'N/A')}*"
+        )
+        send_gtalk_message(ADMIN_MA_NV, alert_msg)
+        return True, prev_status
+    except Exception as ex:
+        print(f"[WARN] Không thể gửi alert GTalk cho Admin: {ex}", flush=True)
+        return False, prev_status
+
+# Template mặc định chuẩn Markdown GTalk (Version 3.3.0 - Link xử lý nội bộ)
+TEMPLATE_VERSION = "v3.3.0"
+
 DEFAULT_TEMPLATES = {
     "mau_am_all": (
-        "*🚨 [CẢNH BÁO TỔNG HỢP HỐI G/L/T] Cần xử lý gấp — Anh/ Chị {ten_am}*\n\n"
-        "Hi Anh/ Chị *{ten_am}*, tính tới thời điểm _{ngay_gio}_\n"
+        "BÁO CÁO PHIẾU TỒN AM {ten_am}\n\n"
+        "Hi Anh/Chị {ten_am}, tính tới thời điểm\n"
+        "{ngay_gio}\n\n"
         "{bcs}\n\n"
-        "👉 *Xử lý phiếu tại:* {link}\n"
-        "📊 *Theo dõi Dashboard:* https://ghn-dashboard.pages.dev/\n"
-        "👉 Nhờ AM xử lý dứt điểm các phiếu tồn ngay nhé!\n"
-        "👀 Cần hỗ trợ vui lòng liên hệ nhóm Gtalk \"*OE - Triển khai phiếu hối G/L/T*\""
+        "📊 *Theo dõi phiếu tại:* https://docs.google.com/spreadsheets/d/1YmFgYyARiFh5vu63My24Sx0ffcy-RsxddEvVWSCgDds/edit?gid=0#gid=0\n"
+        "👉 Chi tiết xử lý tại: https://noibo.ghn.vn/ghn-ticket\n"
+        "Nhờ Anh/Chị đôn đốc bưu cục xử lý phiếu tồn nhé!\n"
+        "Cần hỗ trợ vui lòng liên hệ nhóm GTalk\n"
+        "\"OE - Triển khai phiếu hối G/L/T\""
     ),
     "mau_vung_all": (
-        "*🚨 [CẢNH BÁO TỔNG HỢP HỐI G/L/T] Báo cáo Vùng {vung}*\n\n"
-        "Hi Anh/Chị Trợ Lý/ HRBP vùng *{vung}*, tính tới thời điểm _{ngay_gio}_\n"
+        "🚨 [BÁO CÁO PHIẾU TỒN VÙNG {vung}]\n\n"
+        "Hi Anh/Chị Trợ lý/ HRBP vùng *{vung}*, tính tới thời điểm _{ngay_gio}_\n\n"
         "{bcs}\n\n"
-        "📊 *Theo dõi Dashboard Vùng:* https://ghn-dashboard.pages.dev/\n"
-        "👉 Nhờ Anh/ Chị nhắc nhở AM đôn đốc xử lý ngay nhé!\n"
-        "Cần hỗ trợ vui lòng liên hệ nhóm Gtalk \"*OE - Triển khai phiếu hối G/L/T*\""
+        "📊 *Theo dõi phiếu tại:* https://docs.google.com/spreadsheets/d/1YmFgYyARiFh5vu63My24Sx0ffcy-RsxddEvVWSCgDds/edit?gid=0#gid=0\n"
+        "👉 Chi tiết xử lý tại: https://noibo.ghn.vn/ghn-ticket\n"
+        "👉 Nhờ Anh/Chị nhắc nhở AM đôn đốc bưu cục xử lý dứt điểm nhé!\n"
+        "Cần hỗ trợ vui lòng liên hệ nhóm GTalk \"*OE - Triển khai phiếu hối G/L/T*\""
     ),
     "mau_am_hoilay": (
-        "*📥 [ƯU TIÊN HỐI LẤY] — Anh/ Chị {ten_am}*\n\n"
-        "Hi Anh/ Chị *{ten_am}*, tính tới _{ngay_gio}_ còn phiếu hối lấy cần xử lý:\n"
+        "BÁO CÁO PHIẾU HỐI LẤY AM {ten_am}\n\n"
+        "Hi Anh/Chị {ten_am}, tính tới thời điểm\n"
+        "{ngay_gio}\n\n"
         "{bcs}\n\n"
-        "👉 Đôn đốc shipper đi lấy hàng trước khi đóng ca\n"
-        "👉 *Xử lý tại:* {link}"
+        "📊 *Theo dõi phiếu tại:* https://docs.google.com/spreadsheets/d/1YmFgYyARiFh5vu63My24Sx0ffcy-RsxddEvVWSCgDds/edit?gid=0#gid=0\n"
+        "👉 Chi tiết xử lý tại: https://noibo.ghn.vn/ghn-ticket\n"
+        "Nhờ Anh/Chị đôn đốc shipper đi lấy hàng trước khi đóng ca!\n"
+        "Cần hỗ trợ vui lòng liên hệ nhóm GTalk\n"
+        "\"OE - Triển khai phiếu hối G/L/T\""
     ),
     "mau_vung_hoilay": (
-        "*📥 [HỐI LẤY] Vùng {vung}*\n\n"
-        "Hi Anh/Chị Trợ Lý vùng *{vung}*, tính tới _{ngay_gio}_:\n"
+        "📥 [BÁO CÁO HỐI LẤY VÙNG {vung}]\n\n"
+        "Hi Anh/Chị Trợ lý/ HRBP vùng *{vung}*, tính tới thời điểm _{ngay_gio}_\n\n"
         "{bcs}\n\n"
-        "👉 Nhắc nhở các AM đôn đốc lấy hàng dứt điểm ca chiều"
+        "📊 *Theo dõi phiếu tại:* https://docs.google.com/spreadsheets/d/1YmFgYyARiFh5vu63My24Sx0ffcy-RsxddEvVWSCgDds/edit?gid=0#gid=0\n"
+        "👉 Chi tiết xử lý tại: https://noibo.ghn.vn/ghn-ticket\n"
+        "👉 Nhờ Anh/Chị nhắc nhở các AM đôn đốc lấy hàng dứt điểm ca chiều!\n"
+        "Cần hỗ trợ vui lòng liên hệ nhóm GTalk \"*OE - Triển khai phiếu hối G/L/T*\""
     ),
     "mau_am_hoigiao": (
-        "*🚚 [ƯU TIÊN HỐI GIAO] — Anh/ Chị {ten_am}*\n\n"
-        "Hi Anh/ Chị *{ten_am}*, tính tới _{ngay_gio}_ còn phiếu hối giao cần xử lý:\n"
+        "BÁO CÁO PHIẾU HỐI GIAO AM {ten_am}\n\n"
+        "Hi Anh/Chị {ten_am}, tính tới thời điểm\n"
+        "{ngay_gio}\n\n"
         "{bcs}\n\n"
-        "👉 Đôn đốc bưu cục giao hàng dứt điểm\n"
-        "👉 *Xử lý tại:* {link}"
+        "📊 *Theo dõi phiếu tại:* https://docs.google.com/spreadsheets/d/1YmFgYyARiFh5vu63My24Sx0ffcy-RsxddEvVWSCgDds/edit?gid=0#gid=0\n"
+        "👉 Chi tiết xử lý tại: https://noibo.ghn.vn/ghn-ticket\n"
+        "Nhờ Anh/Chị đôn đốc bưu cục giao hàng dứt điểm!\n"
+        "Cần hỗ trợ vui lòng liên hệ nhóm GTalk\n"
+        "\"OE - Triển khai phiếu hối G/L/T\""
     ),
     "mau_vung_hoigiao": (
-        "*🚚 [HỐI GIAO] Vùng {vung}*\n\n"
-        "Hi Anh/Chị Trợ Lý vùng *{vung}*, tính tới _{ngay_gio}_:\n"
+        "🚚 [BÁO CÁO HỐI GIAO VÙNG {vung}]\n\n"
+        "Hi Anh/Chị Trợ lý/ HRBP vùng *{vung}*, tính tới thời điểm _{ngay_gio}_\n\n"
         "{bcs}\n\n"
-        "👉 Nhắc nhở các AM đôn đốc bưu cục giao dứt điểm"
+        "📊 *Theo dõi phiếu tại:* https://docs.google.com/spreadsheets/d/1YmFgYyARiFh5vu63My24Sx0ffcy-RsxddEvVWSCgDds/edit?gid=0#gid=0\n"
+        "👉 Chi tiết xử lý tại: https://noibo.ghn.vn/ghn-ticket\n"
+        "👉 Nhờ Anh/Chị nhắc nhở các AM đôn đốc bưu cục giao dứt điểm các đơn hối!\n"
+        "Cần hỗ trợ vui lòng liên hệ nhóm GTalk \"*OE - Triển khai phiếu hối G/L/T*\""
     ),
     "mau_am_hoitra": (
-        "*📦 [ƯU TIÊN HỐI TRẢ] — Anh/ Chị {ten_am}*\n\n"
-        "Hi Anh/ Chị *{ten_am}*, tính tới _{ngay_gio}_ còn phiếu hối trả cần xử lý:\n"
+        "BÁO CÁO PHIẾU HỐI TRẢ AM {ten_am}\n\n"
+        "Hi Anh/Chị {ten_am}, tính tới thời điểm\n"
+        "{ngay_gio}\n\n"
         "{bcs}\n\n"
-        "👉 Đôn đốc hoàn tất trả hàng cho Shop\n"
-        "👉 *Xử lý tại:* {link}"
+        "📊 *Theo dõi phiếu tại:* https://docs.google.com/spreadsheets/d/1YmFgYyARiFh5vu63My24Sx0ffcy-RsxddEvVWSCgDds/edit?gid=0#gid=0\n"
+        "👉 Chi tiết xử lý tại: https://noibo.ghn.vn/ghn-ticket\n"
+        "Nhờ Anh/Chị đôn đốc hoàn tất trả hàng cho Shop!\n"
+        "Cần hỗ trợ vui lòng liên hệ nhóm GTalk\n"
+        "\"OE - Triển khai phiếu hối G/L/T\""
     ),
     "mau_vung_hoitra": (
-        "*📦 [HỐI TRẢ] Vùng {vung}*\n\n"
-        "Hi Anh/Chị Trợ Lý vùng *{vung}*, tính tới _{ngay_gio}_:\n"
+        "🔄 [BÁO CÁO HỐI TRẢ VÙNG {vung}]\n\n"
+        "Hi Anh/Chị Trợ lý/ HRBP vùng *{vung}*, tính tới thời điểm _{ngay_gio}_\n\n"
         "{bcs}\n\n"
-        "👉 Nhắc nhở các AM đôn đốc xử lý phiếu trả"
+        "📊 *Theo dõi phiếu tại:* https://docs.google.com/spreadsheets/d/1YmFgYyARiFh5vu63My24Sx0ffcy-RsxddEvVWSCgDds/edit?gid=0#gid=0\n"
+        "👉 Chi tiết xử lý tại: https://noibo.ghn.vn/ghn-ticket\n"
+        "👉 Nhờ Anh/Chị nhắc nhở các AM đôn đốc xử lý đơn hối trả!\n"
+        "Cần hỗ trợ vui lòng liên hệ nhóm GTalk \"*OE - Triển khai phiếu hối G/L/T*\""
     )
 }
 
@@ -496,33 +570,139 @@ def render_am_message(am_info, filter_type, template_text, now_str):
     """Render tin nhắn hoàn chỉnh gửi AM (sắp xếp BC nhiều phiếu nhất lên đầu)."""
     sorted_bcs = sorted(am_info["bcs"].values(), key=lambda x: x["total"], reverse=True)
     bcs_lines = []
-    icon = "📥" if filter_type == "HOI_LAY" else ("🚚" if filter_type == "HOI_GIAO" else ("📦" if filter_type == "HOI_TRA" else "🚨"))
 
     for bc in sorted_bcs:
-        bcs_lines.append(f"{icon} *Bưu cục {bc['name']}*: *{bc['total']}* phiếu — _{bc['nz']} cần ngay, {bc['np']} phạt_")
+        bname = bc.get("name") or bc.get("bl") or "—"
+        bcs_lines.append(f"📦 Bưu cục {bname}: {bc.get('nz', 0)} phiếu (GÁN KHẨN CẤP để không bị phạt), {bc.get('np', 0)} phiếu (GÁN NGAY để không tăng mức phạt)")
 
-    bcs_txt = "\n".join(bcs_lines)
-    content = template_text.replace("{ten_am}", am_info["name"])\
-                           .replace("{vung}", am_info["region"])\
+    bcs_txt = "\n".join(bcs_lines) if bcs_lines else "Hiện không có phiếu tồn nào cần xử lý."
+    content = template_text.replace("{ten_am}", am_info.get("name", ""))\
+                           .replace("{vung}", am_info.get("region", ""))\
                            .replace("{ngay_gio}", now_str)\
                            .replace("{bcs}", bcs_txt)\
-                           .replace("{link}", "https://g.ghn.studio/PhieuKhachHang")
+                           .replace("{link}", "https://noibo.ghn.vn/ghn-ticket")
     return content
 
 def render_vung_message(reg_name, vung_info, filter_type, template_text, now_str):
     """Render tin nhắn hoàn chỉnh gửi Trợ lý Vùng (sắp xếp AM nhiều phiếu nhất lên đầu)."""
     sorted_ams = sorted(vung_info["ams"].items(), key=lambda x: x[1]["total"], reverse=True)
     am_lines = []
-    icon = "📥" if filter_type == "HOI_LAY" else ("🚚" if filter_type == "HOI_GIAO" else ("📦" if filter_type == "HOI_TRA" else "👤"))
 
     for aname, stats in sorted_ams:
-        am_lines.append(f"{icon} *{aname}*: *{stats['total']}* phiếu — _{stats['nz']} cần ngay, {stats['np']} phạt_")
+        am_lines.append(f"📦 *{aname}* (AM): *{stats['nz']}* phiếu (GÁN KHẨN CẤP để không bị phạt), *{stats['np']}* phiếu (GÁN NGAY để không tăng mức phạt)")
 
-    bcs_txt = "\n".join(am_lines)
+    bcs_txt = "\n".join(am_lines) if am_lines else "Hiện các AM trong Vùng không còn phiếu tồn nào cần xử lý."
     content = template_text.replace("{vung}", reg_name)\
                            .replace("{ngay_gio}", now_str)\
                            .replace("{bcs}", bcs_txt)
     return content
+
+# --- BÁO CÁO GIÁM SÁT 2 ADMIN BẤT BIẾN (3049378, 3026736) ---
+def render_admin_health_report(info):
+    """Tin 1/3: Báo cáo tình trạng sống Health API, Hạ tầng & Dashboard Deploy."""
+    tot = info.get('total_tickets', 0)
+    tre = info.get('tre_sla', 0)
+    chua = info.get('chua_tre_sla', 0)
+    pct_tre = f"{tre/tot*100:.1f}%" if tot else "0%"
+    pct_chua = f"{chua/tot*100:.1f}%" if tot else "0%"
+    phat_val = info.get('total_phat', 0)
+    return (
+        f"📊 [BÁO CÁO GIÁM SÁT 1/3] — HEALTH API, HẠ TẦNG & DASHBOARD\n\n"
+        f"• Trạng thái API: {info.get('api_status', 'HEALTHY')}\n"
+        f"• Xác thực API: {info.get('auth_status', 'PASS')}\n"
+        f"• Độ trễ API (Latency): {info.get('latency_ms', 0)}ms\n"
+        f"• Bưu cục lỗi (failed_bc): {info.get('failed_bc_count', 0)}\n"
+        f"• Tổng bưu cục: {info.get('total_buu_cuc', 0)}\n"
+        f"• Tổng phiếu: {tot} phiếu\n"
+        f"• Tổng tiền phạt: {phat_val:,} đ\n"
+        f"• Trễ SLA: {tre} ({pct_tre}) | Chưa Trễ SLA: {chua} ({pct_chua})\n"
+        f"• Snapshot ID: {info.get('snapshot_id', 'N/A')}\n"
+        f"• Nguồn cập nhật: {info.get('source_updated_at', info.get('timestamp', 'N/A'))}\n"
+        f"• Thời gian build: {info.get('built_at', 'N/A')}\n"
+        f"• Thời gian deploy: {info.get('deployed_at', 'N/A')}\n"
+        f"• Artifact Hash: {info.get('artifact_hash', 'N/A')}\n"
+        f"• Filter: {info.get('filter', 'ALL')}\n"
+        f"• Run ID: {info.get('run_id', 'N/A')}\n"
+        f"• Revision: {info.get('revision', os.environ.get('K_REVISION', 'local'))}\n\n"
+        f"📊 Dashboard Vùng: https://ghn-dashboard.pages.dev/"
+    )
+
+def send_admin_monitoring_reports(ams_data, vungs_data, tro_ly_map, meta_info, dry_run=False):
+    """
+    Gửi đúng 3 tin giám sát cho 2 Admin bất biến (3049378, 3026736), tổng cộng 6 tin:
+    1. Health API (render_admin_health_report)
+    2. Tin AM Top 1 (Bản sao NGUYÊN VĂN 100% tin AM gốc từ render_am_message)
+    3. Tin Trợ lý Top 1 (Bản sao NGUYÊN VĂN 100% tin Trợ lý Vùng gốc từ render_vung_message)
+    """
+    admin_logs = []
+    if not ams_data or not vungs_data:
+        return admin_logs
+
+    filter_type = meta_info.get("filter", "ALL").upper()
+    now_str = meta_info.get("timestamp", _now().strftime("%d/%m/%Y %H:%M"))
+
+    # Lọc AM Top 1
+    sorted_ams = sorted(ams_data.values(), key=lambda x: x["total"], reverse=True)
+    top_am = sorted_ams[0] if sorted_ams else None
+
+    # Lọc Trợ lý / Vùng Top 1
+    sorted_vungs = sorted(vungs_data.items(), key=lambda x: x[1]["total"], reverse=True)
+    top_reg, top_vung = sorted_vungs[0] if sorted_vungs else ("", {})
+
+    # Tin 1: Health API
+    msg_health = render_admin_health_report(meta_info)
+
+    # Tin 2: Bản sao nguyên văn 100% tin AM Top 1 (theo đúng template khóa)
+    tpl_key_am = "mau_am_hoilay" if filter_type == "HOI_LAY" else ("mau_am_hoigiao" if filter_type == "HOI_GIAO" else ("mau_am_hoitra" if filter_type == "HOI_TRA" else "mau_am_all"))
+    tpl_am = DEFAULT_TEMPLATES.get(tpl_key_am, DEFAULT_TEMPLATES["mau_am_all"])
+    msg_top_am = render_am_message(top_am, filter_type, tpl_am, now_str) if top_am else ""
+
+    # Tin 3: Bản sao nguyên văn 100% tin Trợ lý Vùng Top 1 (theo đúng template khóa)
+    tpl_key_vung = "mau_vung_hoilay" if filter_type == "HOI_LAY" else ("mau_vung_hoigiao" if filter_type == "HOI_GIAO" else ("mau_vung_hoitra" if filter_type == "HOI_TRA" else "mau_vung_all"))
+    tpl_vung = DEFAULT_TEMPLATES.get(tpl_key_vung, DEFAULT_TEMPLATES["mau_vung_all"])
+    msg_top_vung = render_vung_message(top_reg, top_vung, filter_type, tpl_vung, now_str) if top_vung else ""
+
+    reports = [
+        ("HEALTH_API", "Health API", msg_health),
+        ("TOP_AM", f"AM Top 1 ({top_am['name']})" if top_am else "AM Top 1", msg_top_am),
+        ("TOP_TRO_LY", f"Trợ lý Top 1 (Vùng {top_reg})" if top_reg else "Trợ lý Top 1", msg_top_vung)
+    ]
+
+    for admin_id in ADMIN_IDS:
+        for rtype, rsource, content in reports:
+            if not content:
+                continue
+            if dry_run:
+                admin_logs.append({
+                    "admin_id": admin_id,
+                    "report_type": rtype,
+                    "source_name": rsource,
+                    "success": True,
+                    "error": None,
+                    "retry_count": 0
+                })
+            else:
+                try:
+                    res = send_gtalk_message(admin_id, content)
+                    admin_logs.append({
+                        "admin_id": admin_id,
+                        "report_type": rtype,
+                        "source_name": rsource,
+                        "success": res.get("success", False),
+                        "error": res.get("error"),
+                        "retry_count": res.get("retries", 0)
+                    })
+                except Exception as e:
+                    admin_logs.append({
+                        "admin_id": admin_id,
+                        "report_type": rtype,
+                        "source_name": rsource,
+                        "success": False,
+                        "error": str(e),
+                        "retry_count": 0
+                    })
+
+    return admin_logs
 
 # --- THỰC THI CHU TRÌNH GỬI TIN BẢN SPEED-OPTIMIZED (20s) ---
 def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
@@ -539,6 +719,11 @@ def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
     now_dt = _now()
     now_str = now_dt.strftime("%d/%m/%Y %H:%M")
     filter_type = filter_type.upper()
+
+    if not _scrape_lock.acquire(blocking=False):
+        print(f"[{now_str}] ⚠️ [CYCLE_RUN] LOCK -> FAILED (Locked)", flush=True)
+        return {"success": False, "error": "Đang có tiến trình khác thực thi trên instance này", "cycle_id": cycle_id}
+
     _log_activity("CYCLE_RUN", "START", f"[{cycle_id}] Bắt đầu chu trình gửi tin ({filter_type}, to={send_to}, dry_run={dry_run})")
 
     t_start_all = time.time()
@@ -559,6 +744,10 @@ def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
         resp = execute_with_sheets_retry(_fetch_data)
     except Exception as e:
         _log_activity("CYCLE_RUN", "FAILED", f"[{cycle_id}] Lỗi đọc Google Sheet sau retry: {e}")
+        try:
+            _scrape_lock.release()
+        except Exception:
+            pass
         return {"success": False, "error": f"Sheet read failed: {str(e)}", "cycle_id": cycle_id}
     t_read_dur = round(time.time() - t_read_start, 3)
 
@@ -568,6 +757,10 @@ def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
 
     if len(ct_vals) <= 1:
         _log_activity("CYCLE_RUN", "FAILED", f"[{cycle_id}] Không có dữ liệu trong Chi_tiet")
+        try:
+            _scrape_lock.release()
+        except Exception:
+            pass
         return {"success": False, "error": "Chi_tiet rỗng", "cycle_id": cycle_id}
 
     headers = ct_vals[0]
@@ -760,6 +953,11 @@ def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
     STATE["last_duration_s"] = total_duration
     STATE["status"] = "IDLE"
 
+    try:
+        _scrape_lock.release()
+    except Exception:
+        pass
+
     return {
         "success": True,
         "cycle_id": cycle_id,
@@ -780,12 +978,15 @@ def run_dispatch_cycle(filter_type="ALL", send_to="ALL", dry_run=False):
 
 # --- HTTP SERVER CHO GOOGLE CLOUD RUN ---
 class ControlCenterHandler(BaseHTTPRequestHandler):
-    def _reply(self, code, data, content_type="application/json"):
+    def _reply(self, code, data, content_type="application/json", headers_extra=None):
         self.send_response(code)
         self.send_header("Content-Type", content_type)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        if headers_extra:
+            for k, v in headers_extra.items():
+                self.send_header(k, v)
         self.end_headers()
         if isinstance(data, (dict, list)):
             self.wfile.write(json.dumps(data, ensure_ascii=False).encode("utf-8"))
@@ -794,9 +995,27 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
         elif isinstance(data, bytes):
             self.wfile.write(data)
 
-    # Ẩn nút đăng nhập hoặc tự động vào buồng lái / không bắt buộc auth
+    def _get_cookies(self):
+        cookie_hdr = self.headers.get("Cookie", "")
+        cookies = {}
+        for item in cookie_hdr.split(";"):
+            item = item.strip()
+            if "=" in item:
+                k, v = item.split("=", 1)
+                cookies[k.strip()] = v.strip()
+        return cookies
+
+    def _get_current_user(self):
+        cookies = self._get_cookies()
+        session_token = cookies.get("ghn_session")
+        if not session_token:
+            return None
+        return sso_oidc.verify_session_token(session_token)
+
     def _check_auth(self):
-        return True
+        if not sso_oidc.is_sso_configured():
+            return True
+        return bool(self._get_current_user())
 
     def do_OPTIONS(self):
         self._reply(200, "")
@@ -804,6 +1023,84 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         path = parsed.path
+
+        # ─── SSO OIDC Authentication Endpoints ───
+        if path in ("/auth/login", "/login"):
+            if not sso_oidc.is_sso_configured():
+                return self._reply(500, {"error": "SSO chưa được cấu hình (thiếu GHN_SSO_CLIENT_ID hoặc GHN_SSO_CLIENT_SECRET)"})
+            state, nonce = sso_oidc.generate_state_and_nonce()
+            state_token = sso_oidc.sign_state_payload(state, nonce)
+            auth_url = sso_oidc.build_authorization_url(state, nonce)
+            
+            # Lưu state_token vào cookie HttpOnly tạm thời 5 phút
+            cookie_val = f"ghn_oidc_state={state_token}; Path=/; Max-Age=300; HttpOnly; SameSite=Lax"
+            self.send_response(302)
+            self.send_header("Location", auth_url)
+            self.send_header("Set-Cookie", cookie_val)
+            self.end_headers()
+            return
+
+        if path == "/auth/callback":
+            qs = parse_qs(parsed.query)
+            if "error" in qs:
+                err_desc = qs.get("error_description", [qs.get("error", ["Unknown error"])[0]])[0]
+                return self._reply(400, {"ok": False, "error": f"SSO Authorization Error: {err_desc}"})
+            
+            code = qs.get("code", [None])[0]
+            state = qs.get("state", [None])[0]
+            if not code or not state:
+                return self._reply(400, {"ok": False, "error": "Thiếu mã xác thực (code) hoặc tham số state"})
+            
+            cookies = self._get_cookies()
+            state_token = cookies.get("ghn_oidc_state", "")
+            is_valid_state, nonce = sso_oidc.verify_state_payload(state_token, state)
+            if not is_valid_state:
+                return self._reply(400, {"ok": False, "error": "Xác thực state thất bại (CSRF check failed hoặc state đã hết hạn)"})
+
+            try:
+                tokens = sso_oidc.exchange_code_for_tokens(code)
+                uinfo = sso_oidc.fetch_userinfo(tokens["access_token"])
+                session_token = sso_oidc.create_session_token(uinfo, id_token=tokens.get("id_token", ""))
+                
+                # Tạo cookie session 8 giờ
+                session_cookie = f"ghn_session={session_token}; Path=/; Max-Age={sso_oidc.SESSION_TTL_SECONDS}; HttpOnly; SameSite=Lax"
+                clear_state_cookie = "ghn_oidc_state=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
+                
+                self.send_response(302)
+                self.send_header("Location", "/dashboard")
+                self.send_header("Set-Cookie", session_cookie)
+                self.send_header("Set-Cookie", clear_state_cookie)
+                self.end_headers()
+                return
+            except Exception as e_sso:
+                return self._reply(500, {"ok": False, "error": f"Đăng nhập SSO thất bại: {str(e_sso)}"})
+
+        if path == "/auth/me":
+            user = self._get_current_user()
+            if user:
+                return self._reply(200, {
+                    "authenticated": True,
+                    "user": {
+                        "employee_id": user.get("employee_id"),
+                        "name": user.get("name"),
+                        "phone_number": user.get("phone_number"),
+                        "jobtitle_name": user.get("jobtitle_name"),
+                        "team_name": user.get("team_name"),
+                    }
+                })
+            return self._reply(200, {"authenticated": False})
+
+        if path in ("/auth/logout", "/logout"):
+            user = self._get_current_user()
+            id_token = user.get("id_token", "") if user else ""
+            logout_url = sso_oidc.build_logout_url(id_token_hint=id_token) if sso_oidc.is_sso_configured() else "/dashboard"
+            
+            clear_session_cookie = "ghn_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax"
+            self.send_response(302)
+            self.send_header("Location", logout_url)
+            self.send_header("Set-Cookie", clear_session_cookie)
+            self.end_headers()
+            return
 
         # Hỗ trợ cả GET cho chu trình cào + gửi tin
         if path in ("/api/cycle/run", "/api/scrape_and_send"):
@@ -817,10 +1114,17 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
 
         # UI & Assets (Hỗ trợ cả index.html và Index.html cho cả root / và /dashboard)
         if path in ("/dashboard", "/", "/index.html"):
+            if sso_oidc.is_sso_configured() and not self._get_current_user():
+                self.send_response(302)
+                self.send_header("Location", "/auth/login")
+                self.end_headers()
+                return
+
             cur_dir = os.path.dirname(__file__)
             html_candidates = [
                 os.path.join(cur_dir, "index.html"),
-                os.path.join(cur_dir, "Index.html")
+                os.path.join(cur_dir, "Index.html"),
+                os.path.join(cur_dir, "dashboard", "index.html"),
             ]
             for hp in html_candidates:
                 if os.path.exists(hp):
@@ -836,6 +1140,95 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                 "time": _now().isoformat(),
                 "admin": ADMIN_MA_NV,
                 "project": "ghn-sheets-automation"
+            })
+
+        # GET /api/health/report — Probe tình trạng sống API Nguồn (Read-only, max timeout 10s, KHÔNG crawl full, KHÔNG lock, KHÔNG gửi GTalk)
+        if path == "/api/health/report":
+            import hmac
+            expected_secret = os.environ.get("SCHEDULER_SECRET")
+            if not expected_secret:
+                return self._reply(403, {"ok": False, "error": "SCHEDULER_SECRET is not set"})
+
+            x_scheduler_secret = self.headers.get("X-Scheduler-Secret", "")
+            if not (x_scheduler_secret and hmac.compare_digest(x_scheduler_secret.encode("utf-8"), expected_secret.encode("utf-8"))):
+                return self._reply(401, {"ok": False, "error": "Unauthorized: Invalid or missing X-Scheduler-Secret header"})
+
+            now_vn = datetime.datetime.now(VN_TZ)
+            run_id = f"HLT-{uuid.uuid4().hex[:8]}"
+
+            # 1. Probe kết nối API Nguồn & danh mục bưu cục (Read-only, timeout 10s)
+            ctp_dir = os.path.join(os.path.dirname(__file__), "Cao_Ton_Phieu")
+            if ctp_dir not in sys.path:
+                sys.path.insert(0, ctp_dir)
+            import ghn_vanhanh_api as gva
+
+            t0 = time.time()
+            api_reachable = False
+            api_auth = "FAIL"
+            total_buu_cuc = 0
+            total_tickets_web = 0
+            err_detail = None
+
+            try:
+                api = gva.GHNVanHanhAPI()
+                # Timeout tối đa 10s cho probe nhẹ
+                api.session.timeout = 10
+                meta = api.get_buucuc_list()
+                t1 = time.time()
+                latency_ms = round((t1 - t0) * 1000, 2)
+                api_reachable = True
+                api_auth = "PASS"
+                bcs = meta.get("buu_cuc", [])
+                total_buu_cuc = len(bcs)
+                total_tickets_web = int(meta.get("grand_total", 0))
+            except Exception as e_probe:
+                latency_ms = round((time.time() - t0) * 1000, 2)
+                err_detail = str(e_probe)
+
+            # 2. Đánh giá api_status tách biệt hoàn toàn với snapshot
+            if not api_reachable or api_auth != "PASS":
+                api_status = "FAILED"
+            elif latency_ms > 5000 or total_buu_cuc == 0:
+                api_status = "WARNING"
+            else:
+                api_status = "HEALTHY"
+
+            # 3. Đánh giá snapshot_status độc lập
+            last_snapshot_id = None
+            snapshot_age_s = None
+            snapshot_status = "NOT_AVAILABLE"
+            with _STAGED_LOCK:
+                if _STAGED_SNAPSHOTS:
+                    latest_k = sorted(_STAGED_SNAPSHOTS.keys())[-1]
+                    last_snapshot_id = latest_k
+                    snap_data = _STAGED_SNAPSHOTS[latest_k]
+                    snapshot_age_s = round(time.time() - snap_data.get("created_at", time.time()), 1)
+                    snapshot_status = "FRESH" if snapshot_age_s <= 1800 else "STALE"
+
+            auto_sched = os.environ.get("AUTO_SCHEDULER", "false").strip().lower() not in ("false", "0", "no")
+
+            # Không chạy full ticket crawl tại GET endpoint: các trường deep audit để null rõ ràng
+            return self._reply(200, {
+                "timestamp": now_vn.isoformat(),
+                "service": "GHN Control Center Cloud Run V3",
+                "revision": os.environ.get("K_REVISION", "local"),
+                "app_health": "HEALTHY",
+                "api_source_reachable": api_reachable,
+                "api_auth_status": api_auth,
+                "api_latency_ms": latency_ms,
+                "total_buu_cuc": total_buu_cuc,
+                "total_tickets_web": total_tickets_web,
+                "total_tickets_api": None,
+                "failed_bc": None,
+                "web_api_match": None,
+                "last_snapshot_id": last_snapshot_id,
+                "snapshot_age_seconds": snapshot_age_s,
+                "auto_scheduler_enabled": auto_sched,
+                "api_status": api_status,
+                "snapshot_status": snapshot_status,
+                "data_check": "NOT_RUN",
+                "admin_notified": False,
+                "error": err_detail
             })
 
         if path == "/api/system/status":
@@ -962,6 +1355,871 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
+        # POST /api/data-integrity/report — Deep Audit toàn diện tính toàn vẹn dữ liệu Web vs API (Dùng thủ công, Lock an toàn, KHÔNG ghi Sheet, KHÔNG gửi GTalk)
+        if path == "/api/data-integrity/report":
+            import hmac
+            expected_secret = os.environ.get("SCHEDULER_SECRET")
+            if not expected_secret:
+                return self._reply(403, {"ok": False, "error": "SCHEDULER_SECRET is not set"})
+
+            x_scheduler_secret = self.headers.get("X-Scheduler-Secret", "")
+            if not (x_scheduler_secret and hmac.compare_digest(x_scheduler_secret.encode("utf-8"), expected_secret.encode("utf-8"))):
+                return self._reply(401, {"ok": False, "error": "Unauthorized: Invalid or missing X-Scheduler-Secret header"})
+
+            if not _scrape_lock.acquire(blocking=False):
+                return self._reply(429, {"ok": False, "error": "Đang có tiến trình cào/dispatch khác thực thi trên instance này"})
+
+            run_id = f"AUDIT-{uuid.uuid4().hex[:8]}"
+            t_start = time.time()
+            now_vn = datetime.datetime.now(VN_TZ)
+
+            try:
+                ctp_dir = os.path.join(os.path.dirname(__file__), "Cao_Ton_Phieu")
+                if ctp_dir not in sys.path:
+                    sys.path.insert(0, ctp_dir)
+                import cao_ton_phieu_api as ctp
+
+                buu_cuc, tickets, meta, failed_bc = ctp.crawl_tickets_api(workers=8)
+                t_end = time.time()
+                dur = round(t_end - t_start, 2)
+
+                grand_total_web = int(meta.get("grand_total", 0)) if isinstance(meta, dict) else 0
+                total_tickets_api = len(tickets)
+                total_buu_cuc = len(buu_cuc)
+
+                # Đối soát theo từng bưu cục
+                bc_expected = {str(b.get("value", "")).strip(): int(b.get("total") or 0) for b in buu_cuc}
+                bc_actual = defaultdict(int)
+                for t in tickets:
+                    bc_actual[str(t.get("ma_buu_cuc", "")).strip()] += 1
+
+                mismatched_bc = []
+                for bc, exp in bc_expected.items():
+                    act = bc_actual.get(bc, 0)
+                    if exp != act:
+                        mismatched_bc.append({"ma_buu_cuc": bc, "expected": exp, "actual": act})
+
+                data_check = "PASS" if (len(failed_bc) == 0 and len(mismatched_bc) == 0 and total_tickets_api == grand_total_web) else "FAIL"
+
+                return self._reply(200, {
+                    "ok": True,
+                    "run_id": run_id,
+                    "timestamp": now_vn.isoformat(),
+                    "total_buu_cuc": total_buu_cuc,
+                    "total_tickets_web": grand_total_web,
+                    "total_tickets_api": total_tickets_api,
+                    "web_api_match": (total_tickets_api == grand_total_web),
+                    "failed_bc_count": len(failed_bc),
+                    "failed_bc": [list(x) for x in failed_bc[:20]],
+                    "mismatched_bc_count": len(mismatched_bc),
+                    "mismatched_bc": mismatched_bc[:20],
+                    "data_check": data_check,
+                    "duration_seconds": dur
+                })
+
+            except Exception as ex:
+                dur = round(time.time() - t_start, 2)
+                return self._reply(500, {
+                    "ok": False,
+                    "run_id": run_id,
+                    "error": str(ex),
+                    "data_check": "FAIL",
+                    "duration_seconds": dur
+                })
+            finally:
+                try:
+                    _scrape_lock.release()
+                except Exception:
+                    pass
+
+        # POST /api/pipeline/run | /api/pipeline/preview | /api/pipeline/dispatch
+        # MASTER PIPELINE 2 GIAI ĐOẠN AN TOÀN:
+        # - Chế độ Preview (Mặc định): Crawl API -> Verify Snapshot -> Map nội dung RAM -> Gửi duy nhất 1 tin Top 1 cho Admin duyệt -> Trả về metadata & snapshot_id. KHÔNG gửi diện rộng, KHÔNG ghi Sheet.
+        # - Chế độ Full Dispatch: Yêu cầu cung cấp snapshot_id đã preview và confirm=true -> Ghi Sheet (fail-closed) -> Gửi toàn bộ GTalk theo snapshot RAM -> Gửi Admin summary.
+        if path in ("/api/pipeline/run", "/api/pipeline/preview", "/api/pipeline/dispatch"):
+            # 1. SECURITY FAIL-CLOSED
+            import hmac
+            expected_secret = os.environ.get("SCHEDULER_SECRET")
+            if not expected_secret:
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ❌ [SECURITY] SCHEDULER_SECRET environment variable is missing. Fail-closed rejection.", flush=True)
+                return self._reply(403, {"ok": False, "error_stage": "LOCK", "error": "Server security misconfigured: SCHEDULER_SECRET is not set"})
+
+            x_scheduler_secret = self.headers.get("X-Scheduler-Secret", "")
+            if not (x_scheduler_secret and hmac.compare_digest(x_scheduler_secret.encode("utf-8"), expected_secret.encode("utf-8"))):
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 🚫 [SECURITY] Unauthorized pipeline attempt. Rejecting with 401.", flush=True)
+                return self._reply(401, {"ok": False, "error_stage": "LOCK", "error": "Unauthorized: Invalid or missing X-Scheduler-Secret header"})
+
+            qs = parse_qs(parsed.query)
+            dry_run = qs.get("dry_run", ["false"])[0].lower() in ("true", "1", "yes")
+
+            # Phân biệt rõ ràng mode: "run" (MẶC ĐỊNH PRODUCTION) vs "preview" (Kiểm thử) vs "dispatch" (Thủ công)
+            mode_param = qs.get("action", qs.get("mode", [None]))[0]
+            if path == "/api/pipeline/dispatch":
+                pipeline_mode = "dispatch"
+            elif path == "/api/pipeline/preview":
+                pipeline_mode = "preview"
+            elif mode_param:
+                mode_lower = mode_param.strip().lower()
+                if mode_lower in ("dispatch",):
+                    pipeline_mode = "dispatch"
+                elif mode_lower in ("preview", "sample"):
+                    pipeline_mode = "preview"
+                elif mode_lower in ("run", "production", "full"):
+                    pipeline_mode = "run"
+                else:
+                    return self._reply(400, {"ok": False, "error": f"Mode '{mode_param}' không hợp lệ. Chỉ chấp nhận 'run', 'preview' hoặc 'dispatch'."})
+            else:
+                # MẶC ĐỊNH PRODUCTION PIPELINE DUY NHẤT KHI SCHEDULER GỌI
+                pipeline_mode = "run"
+
+            # ----------------------------------------------------
+            # CHẾ ĐỘ 1: PRODUCTION MASTER PIPELINE DUY NHẤT (MẶC ĐỊNH CHO CLOUD SCHEDULER)
+            # Luồng: Lock -> Chọn filter theo giờ VN -> Crawl API -> Verify (failed_bc/tổng/rỗng) -> Mapping Co_Cau -> Ghi Google Sheet -> Dispatch GTalk từ cùng snapshot RAM -> Gửi summary Admin -> Kết thúc.
+            # ----------------------------------------------------
+            if pipeline_mode == "run":
+                filter_param = qs.get("filter", [None])[0]
+                now_vn = datetime.datetime.now(VN_TZ)
+                current_hour = now_vn.hour
+                is_manual = False
+
+                if filter_param:
+                    filter_upper = filter_param.strip().upper()
+                    if filter_upper not in ("ALL", "HOI_LAY"):
+                        return self._reply(400, {
+                            "ok": False,
+                            "error_stage": "FILTER",
+                            "error": f"Filter '{filter_param}' không hợp lệ. Chỉ chấp nhận 'ALL' hoặc 'HOI_LAY'."
+                        })
+                    filter_type = filter_upper
+                    is_manual = True
+                else:
+                    if 6 <= current_hour < 14:
+                        filter_type = "ALL"
+                    elif 14 <= current_hour < 17:
+                        filter_type = "HOI_LAY"
+                    else:
+                        return self._reply(400, {
+                            "ok": False,
+                            "error_stage": "FILTER",
+                            "error": f"Ngoài khung giờ vận hành (06:00-16:59 VN). Giờ hiện tại: {now_vn.strftime('%H:%M:%S')}. Pipeline bị từ chối."
+                        })
+
+                if not _scrape_lock.acquire(blocking=False):
+                    print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ⚠️ [PIPELINE_RUN] LOCK -> FAILED (Locked)", flush=True)
+                    return self._reply(429, {"ok": False, "error_stage": "LOCK", "error": "Đang có tiến trình cào/dispatch khác thực thi trên instance này"})
+
+                pipeline_id = f"PIPE-{uuid.uuid4().hex[:8]}"
+                t_pipe_start = time.time()
+                now_str = now_vn.strftime("%d/%m/%Y %H:%M")
+                run_mode_str = f"MANUAL ({filter_type})" if is_manual else f"AUTO ({filter_type})"
+                _log_activity("PIPELINE", "START", f"[{pipeline_id}] Bắt đầu Master Pipeline [{run_mode_str}] (dry_run={dry_run})")
+
+                err_stage = "INIT"
+                try:
+                    # BƯỚC 1: CRAWL API & VERIFY TỔNG / BƯU CỤC
+                    err_stage = "CRAWLER"
+                    ctp_dir = os.path.join(os.path.dirname(__file__), "Cao_Ton_Phieu")
+                    if ctp_dir not in sys.path:
+                        sys.path.insert(0, ctp_dir)
+                    import cao_ton_phieu_api as ctp
+
+                    t_crawl_start = time.time()
+                    buu_cuc, tickets, meta, failed_bc = ctp.crawl_tickets_api(workers=8)
+                    t_crawl_dur = round(time.time() - t_crawl_start, 2)
+                    grand_total = meta.get("grand_total") if isinstance(meta, dict) else None
+                    if failed_bc:
+                        details = ", ".join(f"{bc}:{actual}/{expected}" for bc, expected, actual in failed_bc[:20])
+                        raise RuntimeError(f"Crawler có {len(failed_bc)} bưu cục lỗi/lệch tổng; dừng pipeline ({details})")
+                    if grand_total is not None and len(tickets) != int(grand_total):
+                        raise RuntimeError(f"Tổng phiếu API ({len(tickets)}) lệch tổng web báo ({grand_total}); dừng pipeline")
+                    if not tickets or len(tickets) == 0:
+                        raise RuntimeError("Crawler trả về 0 ticket (Dữ liệu rỗng hoặc lỗi API nguồn)")
+
+                    # Trigger State Transition Alerting
+                    try:
+                        check_and_notify_api_state_transition("HEALTHY", {
+                            "latency_ms": round((time.time() - t_pipe_start) * 1000, 2),
+                            "total_buu_cuc": len(buu_cuc),
+                            "total_tickets_web": grand_total or len(tickets),
+                            "run_id": pipeline_id
+                        })
+                    except Exception:
+                        pass
+
+                    # BƯỚC 2: MAPPING CO_CAU
+                    err_stage = "MAPPING"
+                    svc = get_sheets_service()
+                    def _fetch_co_cau(s):
+                        return s.spreadsheets().values().batchGet(
+                            spreadsheetId=SHEET_ID,
+                            ranges=["Co_Cau!A:J", "Co_Cau!S3:W30"]
+                        ).execute()
+                    co_cau_resp = execute_with_sheets_retry(_fetch_co_cau)
+                    vranges = co_cau_resp.get("valueRanges", [])
+                    cc_vals = vranges[0].get("values", []) if len(vranges) > 0 else []
+                    tl_vals = vranges[1].get("values", []) if len(vranges) > 1 else []
+
+                    co_cau = {}
+                    if cc_vals:
+                        hdr_cc = cc_vals[0]
+                        def ci_cc(n): return hdr_cc.index(n) if n in hdr_cc else -1
+                        i_wid = ci_cc("warehouse_id"); i_gid = ci_cc("gdv_pgdv_id")
+                        i_gn = ci_cc("gdv_pgdv_name"); i_amid = ci_cc("area_manager_id")
+                        i_amn = ci_cc("area_manager_name"); i_reg = ci_cc("region_shortname")
+                        for r in cc_vals[1:]:
+                            if i_wid >= 0 and i_wid < len(r) and str(r[i_wid]).strip():
+                                def gv_cc(j): return (str(r[j]).strip() if 0 <= j < len(r) else "")
+                                co_cau[str(r[i_wid]).strip()] = (gv_cc(i_gid), gv_cc(i_gn), gv_cc(i_amid), gv_cc(i_amn), gv_cc(i_reg))
+
+                    name_of = {str(b.get("value", "")).strip(): b.get("label", "") for b in buu_cuc}
+                    bc_label = {str(b.get("value", "")).strip(): b.get("label", "") for b in buu_cuc}
+
+                    cnt_map = {}
+                    for t in tickets:
+                        bc = str(t.get("ma_buu_cuc", "")).strip()
+                        loai = t.get("loai", "")
+                        if bc not in cnt_map:
+                            cnt_map[bc] = [0, 0, 0]
+                        if loai == "Hối giao": cnt_map[bc][0] += 1
+                        elif loai == "Hối lấy": cnt_map[bc][1] += 1
+                        elif loai == "Hối trả": cnt_map[bc][2] += 1
+
+                    au = meta.get("updated_at", now_vn.strftime("%Y-%m-%d %H:%M:%S"))
+                    snapshot_id = f"SNAP-{now_vn.strftime('%Y%m%d-%H%M')}"
+
+                    rows_ton = [["ma_buu_cuc", "ten_buu_cuc", "Hối giao", "Hối lấy", "Hối trả", "Tổng", "Tiền phạt", "cap_nhat_luc"]]
+                    for b in buu_cuc:
+                        bc = str(b.get("value", "")).strip()
+                        c = cnt_map.get(bc, [0, 0, 0])
+                        rows_ton.append([
+                            bc, name_of.get(bc, b.get("label")), c[0], c[1], c[2],
+                            b.get("total"), b.get("penalty"), au
+                        ])
+
+                    rows_ct = [[
+                        "ma_buu_cuc", "ten_buu_cuc", "ma_ticket", "ma_don", "loai_phieu", "tien_phat",
+                        "hạn_đóng", "trạng_thái", "url", "gdv_pgdv_id", "gdv_pgdv_name",
+                        "area_manager_id", "area_manager_name", "region_shortname"
+                    ]]
+                    for t in tickets:
+                        bc = str(t.get("ma_buu_cuc", ""))
+                        cc_info = co_cau.get(bc, ("", "", "", "", ""))
+                        rows_ct.append([
+                            t.get("ma_buu_cuc"),
+                            bc_label.get(bc, ""),
+                            t.get("number", ""),
+                            t.get("order_code", ""),
+                            t.get("loai", ""),
+                            t.get("penalty", 0),
+                            t.get("close_esc", ""),
+                            t.get("trang_thai", ""),
+                            t.get("url", ""),
+                            cc_info[0], cc_info[1], cc_info[2], cc_info[3], cc_info[4]
+                        ])
+
+                    # BƯỚC 3: GHI GOOGLE SHEET (Fail-closed: lỗi ghi Sheet sẽ dừng, KHÔNG gửi GTalk)
+                    err_stage = "SHEET_WRITE"
+                    if not dry_run:
+                        ctp.ensure_tab(svc, ctp.TAB_TON)
+                        ctp.write_tab(svc, ctp.TAB_TON, rows_ton)
+
+                        ctp.ensure_tab(svc, ctp.TAB_CT)
+                        ctp.write_tab(svc, ctp.TAB_CT, rows_ct)
+
+                        try:
+                            ctp.ghi_rp_theo_am(svc, tickets, co_cau, au, name_of)
+                        except Exception as e_am:
+                            print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] [WARN] Lỗi ghi RP_theo_AM: {e_am}", flush=True)
+
+                        try:
+                            if hasattr(ctp, "ghi_rp_theo_vung"):
+                                ctp.ghi_rp_theo_vung(svc, tickets, co_cau, au, name_of)
+                        except Exception as e_vg:
+                            print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] [WARN] Lỗi ghi RP_theo_TroLy: {e_vg}", flush=True)
+
+                    # BƯỚC 3.5: TỰ ĐỘNG BUILD & DEPLOY DASHBOARD LÊN CLOUDFLARE PAGES
+                    err_stage = "DASHBOARD_BUILD_DEPLOY"
+                    cf_deploy_id = None
+                    built_artifact_hash = None
+                    try:
+                        import dashboard_sync as dsync
+                        cached_dash = {
+                            "hdr": rows_ct[0],
+                            "rows": rows_ct[1:],
+                            "ton_hdr": rows_ton[0],
+                            "ton_rows": rows_ton[1:],
+                            "co_cau_hdr": cc_vals[0] if cc_vals else [],
+                            "co_cau_rows": cc_vals[1:] if len(cc_vals) > 1 else [],
+                            "source_updated_at": au,
+                            "snapshot_id": snapshot_id,
+                        }
+                        built_html = dsync._build_raw(cached_dash)
+                        built_artifact_hash = hashlib.sha256(built_html.encode("utf-8")).hexdigest()
+                        if not dry_run and os.environ.get("CF_ACCOUNT_ID") and os.environ.get("CF_API_TOKEN"):
+                            cf_deploy_id = dsync._deploy_to_cloudflare(built_html)
+                            print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ✓ [DASHBOARD_DEPLOY] Tự động deploy Cloudflare Pages thành công. ID: {cf_deploy_id}", flush=True)
+                    except Exception as e_dash:
+                        print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ⚠ [DASHBOARD_DEPLOY] Lỗi auto-deploy dashboard: {e_dash}", flush=True)
+
+                    # BƯỚC 4: DISPATCH GTALK TỪ CÙNG DỮ LIỆU SNAPSHOT TRONG RAM (Không đọc lại Sheet)
+                    err_stage = "DISPATCH"
+                    headers_ct = rows_ct[0]
+                    raw_tickets_ct = rows_ct[1:]
+
+                    tro_ly_map = defaultdict(list)
+                    curr_vung = ""
+                    for r in tl_vals:
+                        if len(r) >= 5:
+                            vung = r[0].strip().upper()
+                            if vung: curr_vung = vung
+                            ma_nv = r[3].strip()
+                            ten_nv = r[4].strip()
+                            if curr_vung and ma_nv and ma_nv.isdigit():
+                                tro_ly_map[curr_vung].append({"id": ma_nv, "name": ten_nv})
+
+                    ams_data, vungs_data = aggregate_tickets(raw_tickets_ct, headers_ct, filter_type)
+
+                    tasks = []
+                    tpl_key_am = f"mau_am_{filter_type.lower()}"
+                    tpl_am = DEFAULT_TEMPLATES.get(tpl_key_am, DEFAULT_TEMPLATES["mau_am_all"])
+                    for aid, am in ams_data.items():
+                        if am["total"] > 0:
+                            msg = render_am_message(am, filter_type, tpl_am, now_str)
+                            tasks.append({
+                                "type": "AM",
+                                "id": aid,
+                                "name": am["name"],
+                                "total": am["total"],
+                                "content": msg
+                            })
+
+                    tpl_key_vung = f"mau_vung_{filter_type.lower()}"
+                    tpl_vung = DEFAULT_TEMPLATES.get(tpl_key_vung, DEFAULT_TEMPLATES["mau_vung_all"])
+                    for reg, vinfo in vungs_data.items():
+                        if vinfo["total"] > 0:
+                            msg = render_vung_message(reg, vinfo, filter_type, tpl_vung, now_str)
+                            for tl in tro_ly_map.get(reg, []):
+                                tasks.append({
+                                    "type": "TRO_LY",
+                                    "id": tl["id"],
+                                    "name": f"{tl['name']} (Vùng {reg})",
+                                    "total": vinfo["total"],
+                                    "content": msg
+                                })
+
+                    success_count = 0
+                    fail_count = 0
+                    sent_details = []
+                    admin_report_logs = []
+
+                    if tasks:
+                        tasks.sort(key=lambda x: x["total"], reverse=True)
+
+                        def _p_worker(t):
+                            time.sleep(0.15)
+                            if dry_run:
+                                return t, {"success": True, "msg_id": "dry_run"}
+                            res = send_gtalk_message(t["id"], t["content"])
+                            return t, res
+
+                        with ThreadPoolExecutor(max_workers=5) as executor:
+                            futures = [executor.submit(_p_worker, t) for t in tasks]
+                            for f in as_completed(futures):
+                                t, r = f.result()
+                                if r.get("success"):
+                                    success_count += 1
+                                else:
+                                    fail_count += 1
+                                    sent_details.append(f"{t['id']} ({t['name']}): {r.get('error')}")
+
+                    # Tính toán số liệu SLA cho admin_meta
+                    total_phat_val = sum(int(t.get("penalty", 0) or 0) for t in tickets)
+                    tre_sla_val = sum(1 for t in tickets if int(t.get("penalty", 0) or 0) > 0)
+                    chua_sla_val = len(tickets) - tre_sla_val
+
+                    # Gửi đúng 3 loại báo cáo giám sát cho 2 Admin bất biến (3049378 & 3026736), tổng cộng 6 tin
+                    admin_meta = {
+                        "api_status": "HEALTHY",
+                        "auth_status": "PASS",
+                        "latency_ms": round(t_crawl_dur * 1000, 1),
+                        "total_buu_cuc": len(buu_cuc),
+                        "total_tickets": len(tickets),
+                        "total_phat": total_phat_val,
+                        "tre_sla": tre_sla_val,
+                        "chua_tre_sla": chua_sla_val,
+                        "failed_bc_count": len(failed_bc),
+                        "run_id": pipeline_id,
+                        "snapshot_id": snapshot_id,
+                        "source_updated_at": au,
+                        "built_at": now_str,
+                        "deployed_at": now_str if cf_deploy_id else "",
+                        "artifact_hash": built_artifact_hash or "N/A",
+                        "filter": filter_type,
+                        "timestamp": now_str,
+                        "revision": os.environ.get("K_REVISION", "local")
+                    }
+                    admin_report_logs = send_admin_monitoring_reports(
+                        ams_data, vungs_data, tro_ly_map, admin_meta, dry_run=dry_run
+                    )
+
+                    total_pipe_dur = round(time.time() - t_pipe_start, 2)
+                    _log_activity("PIPELINE", "SUCCESS", f"[{pipeline_id}] Hoàn tất ({run_mode_str}): {len(tickets)} tickets, {success_count}/{len(tasks)} GTalk, {total_pipe_dur}s")
+
+                    return self._reply(200, {
+                        "ok": True,
+                        "pipeline_id": pipeline_id,
+                        "snapshot_id": snapshot_id,
+                        "filter": filter_type,
+                        "mode": "PRODUCTION" if not is_manual else f"MANUAL_{filter_type}",
+                        "tickets_count": len(tickets),
+                        "warehouses_count": len(buu_cuc),
+                        "gtalk_total": len(tasks),
+                        "gtalk_sent": success_count,
+                        "gtalk_failed": fail_count,
+                        "admin_reports_sent": len(admin_report_logs),
+                        "admin_report_logs": admin_report_logs,
+                        "dashboard_deployed": False,
+                        "duration_seconds": total_pipe_dur
+                    })
+
+                except Exception as ex:
+                    try:
+                        check_and_notify_api_state_transition("FAILED", {
+                            "latency_ms": round((time.time() - t_pipe_start) * 1000, 2),
+                            "total_buu_cuc": 0,
+                            "total_tickets_web": 0,
+                            "run_id": pipeline_id
+                        })
+                    except Exception:
+                        pass
+                    total_pipe_dur = round(time.time() - t_pipe_start, 2)
+                    _log_activity("PIPELINE", "FAILED", f"[{pipeline_id}] Lỗi pipeline ({err_stage}): {ex}")
+                    return self._reply(500, {
+                        "ok": False,
+                        "error_stage": err_stage,
+                        "error": str(ex),
+                        "duration_seconds": total_pipe_dur
+                    })
+                finally:
+                    try:
+                        _scrape_lock.release()
+                    except Exception:
+                        pass
+
+            # ----------------------------------------------------
+            # CHẾ ĐỘ A: PREVIEW / ADMIN-ONLY (MẶC ĐỊNH AN TOÀN)
+            # ----------------------------------------------------
+            if pipeline_mode == "preview":
+                filter_param = qs.get("filter", [None])[0]
+                now_vn = datetime.datetime.now(VN_TZ)
+                current_hour = now_vn.hour
+                is_manual = False
+
+                if filter_param:
+                    filter_upper = filter_param.strip().upper()
+                    if filter_upper not in ("ALL", "HOI_LAY"):
+                        return self._reply(400, {
+                            "ok": False,
+                            "error_stage": "FILTER",
+                            "error": f"Filter '{filter_param}' không hợp lệ. Chỉ chấp nhận 'ALL' hoặc 'HOI_LAY'."
+                        })
+                    filter_type = filter_upper
+                    is_manual = True
+                else:
+                    if 6 <= current_hour < 14:
+                        filter_type = "ALL"
+                    elif 14 <= current_hour < 17:
+                        filter_type = "HOI_LAY"
+                    else:
+                        return self._reply(400, {
+                            "ok": False,
+                            "error_stage": "FILTER",
+                            "error": f"Ngoài khung giờ vận hành (06:00-16:59 VN). Giờ hiện tại: {now_vn.strftime('%H:%M:%S')}. Pipeline bị từ chối."
+                        })
+
+                if not _scrape_lock.acquire(blocking=False):
+                    print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ⚠️ [PIPELINE_PREVIEW] LOCK -> FAILED (Locked)", flush=True)
+                    return self._reply(429, {"ok": False, "error_stage": "LOCK", "error": "Đang có tiến trình ingestion/pipeline khác thực thi trên instance này"})
+
+                pipeline_id = f"PIPE-{uuid.uuid4().hex[:8]}"
+                t_pipe_start = time.time()
+                now_str = now_vn.strftime("%d/%m/%Y %H:%M")
+                _log_activity("PIPELINE_PREVIEW", "START", f"[{pipeline_id}] Bắt đầu Pipeline Preview ({filter_type}, dry_run={dry_run})")
+
+                err_stage = "INIT"
+                try:
+                    err_stage = "CRAWLER"
+                    ctp_dir = os.path.join(os.path.dirname(__file__), "Cao_Ton_Phieu")
+                    if ctp_dir not in sys.path:
+                        sys.path.insert(0, ctp_dir)
+                    import cao_ton_phieu_api as ctp
+
+                    buu_cuc, tickets, meta, failed_bc = ctp.crawl_tickets_api(workers=8)
+                    grand_total = meta.get("grand_total") if isinstance(meta, dict) else None
+                    if failed_bc:
+                        details = ", ".join(f"{bc}:{actual}/{expected}" for bc, expected, actual in failed_bc[:20])
+                        raise RuntimeError(f"Crawler có {len(failed_bc)} bưu cục lỗi/lệch tổng; dừng preview ({details})")
+                    if grand_total is not None and len(tickets) != int(grand_total):
+                        raise RuntimeError(f"Tổng phiếu API ({len(tickets)}) lệch tổng web báo ({grand_total}); dừng preview")
+                    if not tickets or len(tickets) == 0:
+                        raise RuntimeError("Crawler trả về 0 ticket (Dữ liệu rỗng hoặc lỗi API nguồn)")
+
+                    # Trigger duy nhất cho State Transition Alerting (Production trigger từ Master Pipeline)
+                    try:
+                        check_and_notify_api_state_transition("HEALTHY", {
+                            "latency_ms": round((time.time() - t_pipe_start) * 1000, 2),
+                            "total_buu_cuc": len(buu_cuc),
+                            "total_tickets_web": grand_total or len(tickets),
+                            "run_id": pipeline_id
+                        })
+                    except Exception:
+                        pass
+
+                    err_stage = "MAPPING"
+                    svc = get_sheets_service()
+                    def _fetch_co_cau(s):
+                        return s.spreadsheets().values().batchGet(
+                            spreadsheetId=SHEET_ID,
+                            ranges=["Co_Cau!A:J", "Co_Cau!S3:W30"]
+                        ).execute()
+                    co_cau_resp = execute_with_sheets_retry(_fetch_co_cau)
+                    vranges = co_cau_resp.get("valueRanges", [])
+                    cc_vals = vranges[0].get("values", []) if len(vranges) > 0 else []
+                    tl_vals = vranges[1].get("values", []) if len(vranges) > 1 else []
+
+                    co_cau = {}
+                    if cc_vals:
+                        hdr_cc = cc_vals[0]
+                        def ci_cc(n): return hdr_cc.index(n) if n in hdr_cc else -1
+                        i_wid = ci_cc("warehouse_id"); i_gid = ci_cc("gdv_pgdv_id")
+                        i_gn = ci_cc("gdv_pgdv_name"); i_amid = ci_cc("area_manager_id")
+                        i_amn = ci_cc("area_manager_name"); i_reg = ci_cc("region_shortname")
+                        for r in cc_vals[1:]:
+                            if i_wid >= 0 and i_wid < len(r) and str(r[i_wid]).strip():
+                                def gv_cc(j): return (str(r[j]).strip() if 0 <= j < len(r) else "")
+                                co_cau[str(r[i_wid]).strip()] = (gv_cc(i_gid), gv_cc(i_gn), gv_cc(i_amid), gv_cc(i_amn), gv_cc(i_reg))
+
+                    name_of = {str(b.get("value", "")).strip(): b.get("label", "") for b in buu_cuc}
+                    bc_label = {str(b.get("value", "")).strip(): b.get("label", "") for b in buu_cuc}
+
+                    cnt_map = {}
+                    for t in tickets:
+                        bc = str(t.get("ma_buu_cuc", "")).strip()
+                        loai = t.get("loai", "")
+                        if bc not in cnt_map:
+                            cnt_map[bc] = [0, 0, 0]
+                        if loai == "Hối giao": cnt_map[bc][0] += 1
+                        elif loai == "Hối lấy": cnt_map[bc][1] += 1
+                        elif loai == "Hối trả": cnt_map[bc][2] += 1
+
+                    au = meta.get("updated_at", now_vn.strftime("%Y-%m-%d %H:%M:%S"))
+                    snapshot_id = f"SNAP-{now_vn.strftime('%Y%m%d-%H%M%S')}"
+
+                    rows_ton = [["ma_buu_cuc", "ten_buu_cuc", "Hối giao", "Hối lấy", "Hối trả", "Tổng", "Tiền phạt", "cap_nhat_luc"]]
+                    for b in buu_cuc:
+                        bc = str(b.get("value", "")).strip()
+                        c = cnt_map.get(bc, [0, 0, 0])
+                        rows_ton.append([
+                            bc, name_of.get(bc, b.get("label")), c[0], c[1], c[2],
+                            b.get("total"), b.get("penalty"), au
+                        ])
+
+                    rows_ct = [[
+                        "ma_buu_cuc", "ten_buu_cuc", "ma_ticket", "ma_don", "loai_phieu", "tien_phat",
+                        "hạn_đóng", "trạng_thái", "url", "gdv_pgdv_id", "gdv_pgdv_name",
+                        "area_manager_id", "area_manager_name", "region_shortname"
+                    ]]
+                    for t in tickets:
+                        bc = str(t.get("ma_buu_cuc", ""))
+                        cc_info = co_cau.get(bc, ("", "", "", "", ""))
+                        rows_ct.append([
+                            t.get("ma_buu_cuc"),
+                            bc_label.get(bc, ""),
+                            t.get("number", ""),
+                            t.get("order_code", ""),
+                            t.get("loai", ""),
+                            t.get("penalty", 0),
+                            t.get("close_esc", ""),
+                            t.get("trang_thai", ""),
+                            t.get("url", ""),
+                            cc_info[0], cc_info[1], cc_info[2], cc_info[3], cc_info[4]
+                        ])
+
+                    headers_ct = rows_ct[0]
+                    raw_tickets_ct = rows_ct[1:]
+
+                    tro_ly_map = defaultdict(list)
+                    curr_vung = ""
+                    for r in tl_vals:
+                        if len(r) >= 5:
+                            vung = r[0].strip().upper()
+                            if vung: curr_vung = vung
+                            ma_nv = r[3].strip()
+                            ten_nv = r[4].strip()
+                            if curr_vung and ma_nv and ma_nv.isdigit():
+                                tro_ly_map[curr_vung].append({"id": ma_nv, "name": ten_nv})
+
+                    ams_data, vungs_data = aggregate_tickets(raw_tickets_ct, headers_ct, filter_type)
+
+                    tasks = []
+                    tpl_key_am = f"mau_am_{filter_type.lower()}"
+                    tpl_am = DEFAULT_TEMPLATES.get(tpl_key_am, DEFAULT_TEMPLATES["mau_am_all"])
+                    for aid, am in ams_data.items():
+                        if am["total"] > 0:
+                            msg = render_am_message(am, filter_type, tpl_am, now_str)
+                            tasks.append({
+                                "type": "AM",
+                                "id": aid,
+                                "name": am["name"],
+                                "total": am["total"],
+                                "content": msg
+                            })
+
+                    tpl_key_vung = f"mau_vung_{filter_type.lower()}"
+                    tpl_vung = DEFAULT_TEMPLATES.get(tpl_key_vung, DEFAULT_TEMPLATES["mau_vung_all"])
+                    for reg, vinfo in vungs_data.items():
+                        if vinfo["total"] > 0:
+                            msg = render_vung_message(reg, vinfo, filter_type, tpl_vung, now_str)
+                            for tl in tro_ly_map.get(reg, []):
+                                tasks.append({
+                                    "type": "TRO_LY",
+                                    "id": tl["id"],
+                                    "name": f"{tl['name']} (Vùng {reg})",
+                                    "total": vinfo["total"],
+                                    "content": msg
+                                })
+
+                    if tasks:
+                        tasks.sort(key=lambda x: x["total"], reverse=True)
+                        top_task = tasks[0]
+                    else:
+                        top_task = None
+
+                    # Lưu snapshot vào bộ nhớ Staged Snapshots kèm TTL (30 phút)
+                    with _STAGED_LOCK:
+                        now_ts = time.time()
+                        exp_keys = [k for k, v in _STAGED_SNAPSHOTS.items() if now_ts - v.get("created_at", 0) > _SNAPSHOT_TTL]
+                        for k in exp_keys:
+                            _STAGED_SNAPSHOTS.pop(k, None)
+
+                        _STAGED_SNAPSHOTS[snapshot_id] = {
+                            "created_at": now_ts,
+                            "snapshot_id": snapshot_id,
+                            "pipeline_id": pipeline_id,
+                            "filter_type": filter_type,
+                            "now_str": now_str,
+                            "au": au,
+                            "buu_cuc": buu_cuc,
+                            "tickets": tickets,
+                            "meta": meta,
+                            "rows_ton": rows_ton,
+                            "rows_ct": rows_ct,
+                            "co_cau": co_cau,
+                            "name_of": name_of,
+                            "bc_label": bc_label,
+                            "tasks": tasks,
+                            "top_task": top_task
+                        }
+
+                    # GỬI DUY NHẤT 1 TIN MẪU CHO ADMIN (Không gửi recipients khác, không gửi summary)
+                    sample_sent = False
+                    if top_task:
+                        top_approval_msg = f"*[MẪU DUYỆT TỰ ĐỘNG - TOP 1]*\n\n" + top_task["content"]
+                        if not dry_run:
+                            _log_activity("ADMIN_APPROVAL", "PREVIEW_SENT", f"[{pipeline_id}] Gửi tin mẫu Top 1 cho Admin {ADMIN_MA_NV} ({top_task['name']} - {top_task['total']} phiếu)")
+                            send_gtalk_message(ADMIN_MA_NV, top_approval_msg)
+                            sample_sent = True
+                        else:
+                            _log_activity("ADMIN_APPROVAL", "PREVIEW_DRY_RUN", f"[{pipeline_id}] Dry-run mẫu Top 1 cho Admin {ADMIN_MA_NV}")
+
+                    total_dur = round(time.time() - t_pipe_start, 2)
+                    _log_activity("PIPELINE_PREVIEW", "SUCCESS", f"[{pipeline_id}] Preview hoàn tất ({snapshot_id}): {len(tickets)} tickets, {len(tasks)} tasks dự kiến")
+
+                    return self._reply(200, {
+                        "ok": True,
+                        "mode": "preview",
+                        "pipeline_id": pipeline_id,
+                        "snapshot_id": snapshot_id,
+                        "filter": filter_type,
+                        "tickets_count": len(tickets),
+                        "warehouses_count": len(buu_cuc),
+                        "sample_recipient": ADMIN_MA_NV if top_task else None,
+                        "sample_target_name": top_task["name"] if top_task else None,
+                        "sample_target_total": top_task["total"] if top_task else 0,
+                        "tasks_count": len(tasks),
+                        "sample_sent": sample_sent,
+                        "dashboard_deployed": False,
+                        "duration_seconds": total_dur
+                    })
+
+                except Exception as ex:
+                    try:
+                        check_and_notify_api_state_transition("FAILED", {
+                            "latency_ms": round((time.time() - t_pipe_start) * 1000, 2),
+                            "total_buu_cuc": 0,
+                            "total_tickets_web": 0,
+                            "run_id": pipeline_id
+                        })
+                    except Exception:
+                        pass
+                    total_dur = round(time.time() - t_pipe_start, 2)
+                    _log_activity("PIPELINE_PREVIEW", "FAILED", f"[{pipeline_id}] Lỗi preview ({err_stage}): {ex}")
+                    return self._reply(500, {
+                        "ok": False,
+                        "mode": "preview",
+                        "error_stage": err_stage,
+                        "error": str(ex),
+                        "duration_seconds": total_dur
+                    })
+                finally:
+                    try:
+                        _scrape_lock.release()
+                    except Exception:
+                        pass
+
+            # ----------------------------------------------------
+            # CHẾ ĐỘ B: FULL DISPATCH (YÊU CẦU XÁC NHẬN RÕ RÀNG)
+            # ----------------------------------------------------
+            elif pipeline_mode == "dispatch":
+                snapshot_id = qs.get("snapshot_id", [None])[0]
+                confirm = qs.get("confirm", ["false"])[0].lower() in ("true", "1", "yes")
+
+                if not snapshot_id or not confirm:
+                    return self._reply(400, {
+                        "ok": False,
+                        "mode": "dispatch",
+                        "error": "Full dispatch yêu cầu cung cấp đúng snapshot_id đã preview và tham số confirm=true"
+                    })
+
+                # Lấy snapshot từ RAM staged snapshots
+                staged = None
+                with _STAGED_LOCK:
+                    staged = _STAGED_SNAPSHOTS.get(snapshot_id)
+                    if staged and (time.time() - staged.get("created_at", 0) > _SNAPSHOT_TTL):
+                        _STAGED_SNAPSHOTS.pop(snapshot_id, None)
+                        staged = None
+
+                if not staged:
+                    return self._reply(400, {
+                        "ok": False,
+                        "mode": "dispatch",
+                        "error": f"Snapshot '{snapshot_id}' không tồn tại hoặc đã hết hạn (> {_SNAPSHOT_TTL//60} phút). Vui lòng chạy preview để tạo snapshot mới."
+                    })
+
+                if not _scrape_lock.acquire(blocking=False):
+                    return self._reply(429, {"ok": False, "mode": "dispatch", "error": "Đang có tiến trình khác thực thi trên instance này"})
+
+                t_disp_start = time.time()
+                dispatch_id = f"DISP-{uuid.uuid4().hex[:8]}"
+                _log_activity("PIPELINE_DISPATCH", "START", f"[{dispatch_id}] Bắt đầu Full Dispatch cho {snapshot_id} (dry_run={dry_run})")
+
+                err_stage = "INIT"
+                try:
+                    # BƯỚC 1: GHI GOOGLE SHEET TỪ SNAPSHOT TRONG RAM
+                    err_stage = "SHEET_WRITE"
+                    ctp_dir = os.path.join(os.path.dirname(__file__), "Cao_Ton_Phieu")
+                    if ctp_dir not in sys.path:
+                        sys.path.insert(0, ctp_dir)
+                    import cao_ton_phieu_api as ctp
+
+                    svc = get_sheets_service()
+                    if not dry_run:
+                        ctp.ensure_tab(svc, ctp.TAB_TON)
+                        ctp.write_tab(svc, ctp.TAB_TON, staged["rows_ton"])
+
+                        ctp.ensure_tab(svc, ctp.TAB_CT)
+                        ctp.write_tab(svc, ctp.TAB_CT, staged["rows_ct"])
+
+                        try:
+                            ctp.ghi_rp_theo_am(svc, staged["tickets"], staged["co_cau"], staged["au"], staged["name_of"])
+                        except Exception as e_am:
+                            print(f"[WARN] Lỗi ghi RP_theo_AM: {e_am}", flush=True)
+
+                        try:
+                            if hasattr(ctp, "ghi_rp_theo_vung"):
+                                ctp.ghi_rp_theo_vung(svc, staged["tickets"], staged["co_cau"], staged["au"], staged["name_of"])
+                        except Exception as e_vg:
+                            print(f"[WARN] Lỗi ghi RP_theo_TroLy: {e_vg}", flush=True)
+
+                    # BƯỚC 2: DISPATCH GTALK TỪ SNAPSHOT TRONG RAM (Chỉ khi Sheet write thành công)
+                    err_stage = "DISPATCH"
+                    tasks = staged["tasks"]
+                    success_count = 0
+                    fail_count = 0
+                    sent_details = []
+
+                    def _d_worker(t):
+                        time.sleep(0.15)
+                        if dry_run:
+                            return t, {"success": True, "msg_id": "dry_run"}
+                        res = send_gtalk_message(t["id"], t["content"])
+                        return t, res
+
+                    with ThreadPoolExecutor(max_workers=5) as executor:
+                        futures = [executor.submit(_d_worker, t) for t in tasks]
+                        for f in as_completed(futures):
+                            t, r = f.result()
+                            if r.get("success"):
+                                success_count += 1
+                            else:
+                                fail_count += 1
+                                sent_details.append(f"{t['id']} ({t['name']}): {r.get('error')}")
+
+                    # Gửi đúng 3 loại báo cáo giám sát cho 2 Admin bất biến (3049378 & 3026736), tổng cộng 6 tin
+                    admin_meta = {
+                        "api_status": "HEALTHY",
+                        "auth_status": "PASS",
+                        "latency_ms": 0,
+                        "total_buu_cuc": staged.get("warehouses_count", 0),
+                        "total_tickets": staged.get("tickets_count", 0),
+                        "failed_bc_count": 0,
+                        "run_id": dispatch_id,
+                        "snapshot_id": snapshot_id,
+                        "filter": staged.get("filter", "ALL"),
+                        "timestamp": staged.get("now_str", _now().strftime("%d/%m/%Y %H:%M")),
+                        "revision": os.environ.get("K_REVISION", "local")
+                    }
+                    admin_report_logs = send_admin_monitoring_reports(
+                        staged.get("ams_data", {}), staged.get("vungs_data", {}), staged.get("tro_ly_map", {}), admin_meta, dry_run=dry_run
+                    )
+
+                    # Xóa snapshot sau khi đã dispatch thành công để chống replay
+                    with _STAGED_LOCK:
+                        _STAGED_SNAPSHOTS.pop(snapshot_id, None)
+
+                    total_disp_dur = round(time.time() - t_disp_start, 2)
+                    _log_activity("PIPELINE_DISPATCH", "SUCCESS", f"[{dispatch_id}] Hoàn tất ({snapshot_id}): {success_count}/{len(tasks)} sent, {total_disp_dur}s")
+
+                    return self._reply(200, {
+                        "ok": True,
+                        "mode": "dispatch",
+                        "snapshot_id": snapshot_id,
+                        "gtalk_total": len(tasks),
+                        "gtalk_sent": success_count,
+                        "gtalk_failed": fail_count,
+                        "admin_reports_sent": len(admin_report_logs),
+                        "admin_report_logs": admin_report_logs,
+                        "dashboard_deployed": False,
+                        "duration_seconds": total_disp_dur
+                    })
+
+                except Exception as ex:
+                    total_disp_dur = round(time.time() - t_disp_start, 2)
+                    _log_activity("PIPELINE_DISPATCH", "FAILED", f"[{dispatch_id}] Lỗi dispatch ({err_stage}): {ex}")
+                    return self._reply(500, {
+                        "ok": False,
+                        "mode": "dispatch",
+                        "error_stage": err_stage,
+                        "error": str(ex),
+                        "duration_seconds": total_disp_dur
+                    })
+                finally:
+                    try:
+                        _scrape_lock.release()
+                    except Exception:
+                        pass
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 🔓 [{pipeline_id}] PIPELINE_LOCK_RELEASED", flush=True)
+
         # Thêm endpoint POST /api/ingestion/run cho Cloud Scheduler (Đã chuẩn hóa Security Fail-Closed & Distributed TTL Lock)
         if path == "/api/ingestion/run":
             # 1. SECURITY FAIL-CLOSED: BẮT BUỘC có SCHEDULER_SECRET từ environment, KHÔNG hardcode default.
@@ -986,10 +2244,6 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
 
             # 2. SINGLE-INSTANCE THREAD LOCK (_scrape_lock = threading.Lock)
             # Cloud Run max instances = 1, chống hai request đồng thời trong cùng instance.
-            global _scrape_lock
-            if not '_scrape_lock' in globals():
-                _scrape_lock = threading.Lock()
-
             if not _scrape_lock.acquire(blocking=False):
                 print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ⚠️ [INGESTION] INGESTION_LOCK_ACQUIRED -> FAILED (Locked)", flush=True)
                 return self._reply(429, {"ok": False, "error_stage": "LOCK", "error": "Đang có tiến trình ingestion khác thực thi trên instance này"})
@@ -1006,9 +2260,23 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                 ctp_dir = os.path.join(os.path.dirname(__file__), "Cao_Ton_Phieu")
                 if ctp_dir not in sys.path:
                     sys.path.insert(0, ctp_dir)
-                import cao_ton_phieu as ctp
+                # Dùng crawler API mới làm đường chạy online duy nhất.
+                # File cao_ton_phieu.py cũ chỉ giữ lại để đối chiếu, không dùng production.
+                import cao_ton_phieu_api as ctp
 
-                buu_cuc, tickets, meta = ctp.login_and_scrape_v2()
+                buu_cuc, tickets, meta, failed_bc = ctp.crawl_tickets_api(workers=8)
+                grand_total = meta.get("grand_total") if isinstance(meta, dict) else None
+                if failed_bc:
+                    details = ", ".join(
+                        f"{bc}:{actual}/{expected}" for bc, expected, actual in failed_bc[:20]
+                    )
+                    raise RuntimeError(
+                        f"Crawler có {len(failed_bc)} bưu cục lỗi/lệch tổng; không ghi snapshot ({details})"
+                    )
+                if grand_total is not None and len(tickets) != int(grand_total):
+                    raise RuntimeError(
+                        f"Tổng phiếu API ({len(tickets)}) lệch tổng web báo ({grand_total}); không ghi snapshot"
+                    )
                 if not tickets or len(tickets) == 0:
                     raise RuntimeError("Crawler trả về 0 ticket (Dữ liệu rỗng hoặc lỗi API nguồn)")
                 print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ✅ [{run_id}] CRAWLER_SUCCESS ({len(tickets)} tickets, {len(buu_cuc)} bưu cục)", flush=True)
@@ -1080,35 +2348,10 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
 
                 print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ✅ [{run_id}] SHEET_WRITE_SUCCESS (snapshot_id={snapshot_id}, cap_nhat_luc={au})", flush=True)
 
-                # 5. Dashboard Build & Cloudflare Deploy (Fail-closed: Sheet write fail -> không deploy)
-                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 🌐 [{run_id}] DASHBOARD_BUILD_START", flush=True)
+                # 5. Dashboard đang FREEZE: ingestion không tự deploy Cloudflare.
+                print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ⏸️ [{run_id}] DASHBOARD_DEPLOY_SKIPPED_FREEZE", flush=True)
                 dashboard_deployed = False
                 cf_deployment_id = "—"
-                try:
-                    import dashboard_sync as dsync
-                    cached_data = {
-                        "hdr": rows_ct[0],
-                        "rows": rows_ct[1:],
-                        "ci": {h: i for i, h in enumerate(rows_ct[0])}
-                    }
-                    raw_data = dsync._build_raw(cached_data)
-                    cf_deployment_id = dsync._deploy_to_cloudflare(raw_data)
-                    dashboard_deployed = True
-                    print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ✅ [{run_id}] CLOUDFLARE_DEPLOY_SUCCESS (ID: {cf_deployment_id})", flush=True)
-                except Exception as e_ds:
-                    print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] ❌ [{run_id}] DASHBOARD_BUILD / DEPLOY FAILED: {e_ds}", flush=True)
-                    _log_activity("INGESTION", "PARTIAL", f"[{run_id}] Ingestion thành công Sheet nhưng deploy dashboard lỗi: {e_ds}")
-                    dur = round(time.time() - t_start, 2)
-                    return self._reply(500, {
-                        "ok": False,
-                        "error_stage": "CLOUDFLARE_DEPLOY",
-                        "error": str(e_ds),
-                        "snapshot_id": snapshot_id,
-                        "cap_nhat_luc": au,
-                        "ticket_count": len(tickets),
-                        "warehouse_count": len(buu_cuc),
-                        "duration_seconds": dur
-                    })
 
                 dur = round(time.time() - t_start, 2)
                 print(f"[{_now().strftime('%Y-%m-%d %H:%M:%S')}] 🎉 [{run_id}] INGESTION_SUCCESS in {dur}s", flush=True)
@@ -1167,17 +2410,31 @@ class ControlCenterHandler(BaseHTTPRequestHandler):
                 return self._reply(403, {"error": "FORBIDDEN"})
             try:
                 import dashboard_sync as dsync
-                # Đọc Chi_tiet từ Google Sheet (không crawl)
+                # Đọc Chi_tiet và Ton_phieu từ Google Sheet (không crawl)
                 _svc = get_sheets_service()
-                _res = _svc.spreadsheets().values().get(
+                _res_ct = _svc.spreadsheets().values().get(
                     spreadsheetId=SHEET_ID, range="'Chi_tiet'!A:ZZ"
                 ).execute()
-                _vals = _res.get("values", [])
-                _hdr  = _vals[0] if _vals else []
-                _rows = _vals[1:] if len(_vals) > 1 else []
+                _vals_ct = _res_ct.get("values", [])
+                _hdr  = _vals_ct[0] if _vals_ct else []
+                _rows = _vals_ct[1:] if len(_vals_ct) > 1 else []
+
+                _ton_hdr, _ton_rows = [], []
+                try:
+                    _res_ton = _svc.spreadsheets().values().get(
+                        spreadsheetId=SHEET_ID, range="'Ton_phieu'!A:ZZ"
+                    ).execute()
+                    _vals_ton = _res_ton.get("values", [])
+                    _ton_hdr  = _vals_ton[0] if _vals_ton else []
+                    _ton_rows = _vals_ton[1:] if len(_vals_ton) > 1 else []
+                except Exception as _e_ton:
+                    print(f"[WARN] Không đọc được tab Ton_phieu: {_e_ton}", flush=True)
+
                 cached = {
                     "hdr": _hdr,
                     "rows": _rows,
+                    "ton_hdr": _ton_hdr,
+                    "ton_rows": _ton_rows,
                     "ci": {h: i for i, h in enumerate(_hdr)},
                 }
                 raw_data = dsync._build_raw(cached)
@@ -1216,12 +2473,27 @@ def run_server(port=8080):
                         ctp_dir = os.path.join(os.path.dirname(__file__), "Cao_Ton_Phieu")
                         if ctp_dir not in sys.path:
                             sys.path.insert(0, ctp_dir)
-                        import cao_ton_phieu as ctp
-                            
-                        buu_cuc, tickets, meta = ctp.login_and_scrape_v2()
+                        import cao_ton_phieu_api as ctp
+
+                        buu_cuc, tickets, meta, failed_bc = ctp.crawl_tickets_api(workers=8)
+                        grand_total = meta.get("grand_total") if isinstance(meta, dict) else None
+                        if failed_bc:
+                            details = ", ".join(
+                                f"{bc}:{actual}/{expected}" for bc, expected, actual in failed_bc[:20]
+                            )
+                            raise RuntimeError(
+                                f"Crawler có {len(failed_bc)} bưu cục lỗi/lệch tổng; không ghi snapshot ({details})"
+                            )
+                        if grand_total is not None and len(tickets) != int(grand_total):
+                            raise RuntimeError(
+                                f"Tổng phiếu API ({len(tickets)}) lệch tổng web báo ({grand_total}); không ghi snapshot"
+                            )
+                        if not tickets or len(tickets) == 0:
+                            raise RuntimeError("Crawler trả về 0 ticket (Dữ liệu rỗng hoặc lỗi API nguồn)")
                         svc = get_sheets_service()
                         co_cau = ctp.load_co_cau_map(svc)
                         name_of = {str(b.get("value", "")): b.get("label") for b in buu_cuc}
+                        bc_label = {str(b.get("value", "")): b.get("label", "") for b in buu_cuc}
 
                         cnt_map = {}
                         for t in tickets:
@@ -1262,7 +2534,7 @@ def run_server(port=8080):
                             cc_info = co_cau.get(bc, ("", "", "", "", ""))
                             rows_ct.append([
                                 t.get("ma_buu_cuc"),
-                                name_of.get(bc, ""),
+                                bc_label.get(bc, ""),
                                 t.get("number", ""),
                                 t.get("order_code", ""),
                                 t.get("loai", ""),
